@@ -15,16 +15,38 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-export interface EditorDialogProps {
-  open?: boolean
+interface EditorDialogBaseProps {
+  open: boolean
   onOpenChange?: (open: boolean) => void
-  title?: React.ReactNode
   description?: React.ReactNode
   children?: React.ReactNode
   footer?: React.ReactNode
   className?: string
   showCloseButton?: boolean
 }
+
+type DialogWithTitle = EditorDialogBaseProps & {
+  title: React.ReactNode
+  "aria-label"?: string
+  ariaLabel?: string
+}
+
+type DialogWithAriaLabel = EditorDialogBaseProps & {
+  title?: React.ReactNode
+  "aria-label": string
+  ariaLabel?: string
+}
+
+type DialogWithAriaLabelCamel = EditorDialogBaseProps & {
+  title?: React.ReactNode
+  "aria-label"?: string
+  ariaLabel: string
+}
+
+export type EditorDialogProps =
+  | DialogWithTitle
+  | DialogWithAriaLabel
+  | DialogWithAriaLabelCamel
 
 /**
  * Standard Dialog Pattern for the Ghost AI editor chrome.
@@ -43,11 +65,16 @@ export function EditorDialog({
   footer,
   className,
   showCloseButton = true,
+  "aria-label": ariaLabelProp,
+  ariaLabel,
 }: EditorDialogProps) {
+  const accessibleLabel = ariaLabelProp ?? ariaLabel
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={showCloseButton}
+        aria-label={accessibleLabel}
         className={cn(
           "rounded-3xl border border-surface-border bg-elevated text-copy-primary shadow-2xl backdrop-blur-md sm:max-w-md",
           className

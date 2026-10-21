@@ -26,6 +26,7 @@ export function ProjectSidebar({
       data-slot="project-sidebar"
       aria-label="Projects sidebar"
       aria-hidden={!isOpen}
+      inert={!isOpen}
       className={cn(
         "fixed left-3 top-16 bottom-3 z-40 flex w-80 max-w-[calc(100vw-1.5rem)] flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-md transition-all duration-300 ease-in-out",
         isOpen
