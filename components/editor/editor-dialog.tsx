@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-interface EditorDialogBaseProps {
+export interface EditorDialogBaseProps {
   open: boolean
-  onOpenChange?: (open: boolean) => void
+  onOpenChange: (open: boolean) => void
   description?: React.ReactNode
   children?: React.ReactNode
   footer?: React.ReactNode
