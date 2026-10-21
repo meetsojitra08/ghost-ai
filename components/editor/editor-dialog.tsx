@@ -82,7 +82,7 @@ export function EditorDialog({
       >
         {(title || description) && (
           <DialogHeader>
-            {title ? (
+            {title != null && title !== false ? (
               <DialogTitle className="text-base font-semibold tracking-tight text-copy-primary">
                 {title}
               </DialogTitle>
