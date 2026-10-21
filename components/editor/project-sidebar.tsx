@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 export interface ProjectSidebarProps
   extends React.HTMLAttributes<HTMLElement> {
   isOpen: boolean
-  onClose?: () => void
+  onClose: () => void
   onNewProject?: () => void
 }
 
@@ -44,18 +44,16 @@ export function ProjectSidebar({
             Projects
           </h2>
         </div>
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onClose}
-            aria-label="Close sidebar"
-            title="Close sidebar"
-            className="text-copy-muted hover:text-copy-primary hover:bg-subtle"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onClose}
+          aria-label="Close sidebar"
+          title="Close sidebar"
+          className="text-copy-muted hover:text-copy-primary hover:bg-subtle"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Tabs section */}

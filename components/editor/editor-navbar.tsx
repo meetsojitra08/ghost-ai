@@ -12,7 +12,6 @@ export interface EditorNavbarProps
   onToggleSidebar: () => void
   title?: React.ReactNode
   centerContent?: React.ReactNode
-  rightContent?: React.ReactNode
 }
 
 export function EditorNavbar({
@@ -20,7 +19,6 @@ export function EditorNavbar({
   onToggleSidebar,
   title,
   centerContent,
-  rightContent,
   className,
   ...props
 }: EditorNavbarProps) {
@@ -61,10 +59,8 @@ export function EditorNavbar({
         {centerContent ?? null}
       </div>
 
-      {/* Right section: stays empty for now, accepts optional future content */}
-      <div className="flex items-center justify-end">
-        {rightContent ?? null}
-      </div>
+      {/* Right section: stays empty for now */}
+      <div className="flex items-center justify-end" />
     </header>
   )
 }
