@@ -13,6 +13,8 @@ export interface ProjectSidebarProps
   isOpen: boolean
   onClose: () => void
   onNewProject?: () => void
+  onOpenProject?: (project: Project) => void
+  activeProjectId?: string | null
   ownedProjects?: Project[]
   sharedProjects?: Project[]
   onRenameProject?: (project: Project) => void
@@ -23,6 +25,8 @@ export function ProjectSidebar({
   isOpen,
   onClose,
   onNewProject,
+  onOpenProject,
+  activeProjectId,
   ownedProjects = [],
   sharedProjects = [],
   onRenameProject,
@@ -119,59 +123,83 @@ export function ProjectSidebar({
               </>
             ) : (
               <div className="flex-1 overflow-y-auto space-y-1 pr-0.5">
-                {ownedProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="group flex items-center justify-between rounded-xl border border-transparent px-2.5 py-2 transition-colors hover:border-surface-border-subtle hover:bg-subtle/70"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
-                      <Folder className="h-4 w-4 shrink-0 text-brand" />
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className="truncate text-sm font-medium text-copy-primary"
-                          title={project.name}
+                {ownedProjects.map((project) => {
+                  const isActive = activeProjectId === project.id
+
+                  return (
+                    <div
+                      key={project.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onOpenProject?.(project)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          onOpenProject?.(project)
+                        }
+                      }}
+                      className={cn(
+                        "group flex cursor-pointer items-center justify-between rounded-xl border border-transparent px-2.5 py-2 transition-colors hover:border-surface-border-subtle hover:bg-subtle/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand",
+                        isActive && "bg-subtle/80 border-surface-border-subtle"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+                        <Folder
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-colors",
+                            isActive ? "text-brand" : "text-brand/80 group-hover:text-brand"
+                          )}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={cn(
+                              "truncate text-sm font-medium transition-colors",
+                              isActive ? "text-brand" : "text-copy-primary"
+                            )}
+                            title={project.name}
+                          >
+                            {project.name}
+                          </p>
+                          <p className="truncate font-mono text-xs text-copy-muted">
+                            /{project.slug}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Actions: only for owned projects */}
+                      <div className="flex shrink-0 items-center gap-1 opacity-80 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onRenameProject?.(project)
+                          }}
+                          aria-label={`Rename ${project.name}`}
+                          title="Rename project"
+                          className="text-copy-muted hover:text-copy-primary hover:bg-subtle"
                         >
-                          {project.name}
-                        </p>
-                        <p className="truncate font-mono text-xs text-copy-muted">
-                          /{project.slug}
-                        </p>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDeleteProject?.(project)
+                          }}
+                          aria-label={`Delete ${project.name}`}
+                          title="Delete project"
+                          className="text-copy-muted hover:text-state-error hover:bg-state-error/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Actions: only for owned projects */}
-                    <div className="flex shrink-0 items-center gap-1 opacity-80 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onRenameProject?.(project)
-                        }}
-                        aria-label={`Rename ${project.name}`}
-                        title="Rename project"
-                        className="text-copy-muted hover:text-copy-primary hover:bg-subtle"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDeleteProject?.(project)
-                        }}
-                        aria-label={`Delete ${project.name}`}
-                        title="Delete project"
-                        className="text-copy-muted hover:text-state-error hover:bg-state-error/10"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </TabsContent>
@@ -200,28 +228,52 @@ export function ProjectSidebar({
               </>
             ) : (
               <div className="flex-1 overflow-y-auto space-y-1 pr-0.5">
-                {sharedProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="flex items-center justify-between rounded-xl border border-transparent px-2.5 py-2 transition-colors hover:border-surface-border-subtle hover:bg-subtle/70"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <Users className="h-4 w-4 shrink-0 text-copy-muted" />
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className="truncate text-sm font-medium text-copy-primary"
-                          title={project.name}
-                        >
-                          {project.name}
-                        </p>
-                        <p className="truncate font-mono text-xs text-copy-muted">
-                          /{project.slug}
-                        </p>
+                {sharedProjects.map((project) => {
+                  const isActive = activeProjectId === project.id
+
+                  return (
+                    <div
+                      key={project.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onOpenProject?.(project)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          onOpenProject?.(project)
+                        }
+                      }}
+                      className={cn(
+                        "group flex cursor-pointer items-center justify-between rounded-xl border border-transparent px-2.5 py-2 transition-colors hover:border-surface-border-subtle hover:bg-subtle/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand",
+                        isActive && "bg-subtle/80 border-surface-border-subtle"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <Users
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-colors",
+                            isActive ? "text-brand" : "text-copy-muted"
+                          )}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={cn(
+                              "truncate text-sm font-medium transition-colors",
+                              isActive ? "text-brand" : "text-copy-primary"
+                            )}
+                            title={project.name}
+                          >
+                            {project.name}
+                          </p>
+                          <p className="truncate font-mono text-xs text-copy-muted">
+                            /{project.slug}
+                          </p>
+                        </div>
                       </div>
+                      {/* No actions for shared/collaborator projects per specification */}
                     </div>
-                    {/* No actions for shared/collaborator projects per specification */}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </TabsContent>

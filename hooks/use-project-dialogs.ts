@@ -14,6 +14,11 @@ export interface UseProjectDialogsReturn {
   isDeleteOpen: boolean
   selectedProject: Project | null
 
+  // Active workspace project
+  activeProject: Project | null
+  setActiveProject: React.Dispatch<React.SetStateAction<Project | null>>
+  handleOpenProject: (project: Project) => void
+
   // Form state
   projectName: string
   projectSlug: string
@@ -45,6 +50,7 @@ export function useProjectDialogs(
   const [projects, setProjects] = React.useState<Project[]>(initialProjects)
   const [activeDialog, setActiveDialog] = React.useState<DialogType>(null)
   const [selectedProject, setSelectedProject] = React.useState<Project | null>(null)
+  const [activeProject, setActiveProject] = React.useState<Project | null>(null)
   const [projectName, setProjectNameState] = React.useState("")
   const [projectSlug, setProjectSlug] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
@@ -58,6 +64,10 @@ export function useProjectDialogs(
     () => projects.filter((p) => !p.isOwner),
     [projects]
   )
+
+  const handleOpenProject = React.useCallback((project: Project) => {
+    setActiveProject(project)
+  }, [])
 
   const openCreateDialog = React.useCallback(() => {
     setActiveDialog("create")
@@ -111,6 +121,7 @@ export function useProjectDialogs(
       }
 
       setProjects((prev) => [newProject, ...prev])
+      setActiveProject(newProject)
       setIsLoading(false)
       closeDialog()
     },
@@ -138,6 +149,16 @@ export function useProjectDialogs(
             : p
         )
       )
+      setActiveProject((prev) =>
+        prev?.id === selectedProject.id
+          ? {
+              ...prev,
+              name: trimmedName,
+              slug: updatedSlug,
+              updatedAt: "Just now",
+            }
+          : prev
+      )
       setIsLoading(false)
       closeDialog()
     },
@@ -149,6 +170,7 @@ export function useProjectDialogs(
 
     setIsLoading(true)
     setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id))
+    setActiveProject((prev) => (prev?.id === selectedProject.id ? null : prev))
     setIsLoading(false)
     closeDialog()
   }, [selectedProject, closeDialog])
@@ -159,6 +181,10 @@ export function useProjectDialogs(
     isRenameOpen: activeDialog === "rename",
     isDeleteOpen: activeDialog === "delete",
     selectedProject,
+
+    activeProject,
+    setActiveProject,
+    handleOpenProject,
 
     projectName,
     projectSlug,
