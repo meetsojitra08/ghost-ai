@@ -1,18 +1,58 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { EditorNavbar } from "./editor-navbar";
-import { ProjectSidebar } from "./project-sidebar";
+import * as React from "react"
+import { FolderKanban, Plus } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { useProjectDialogs } from "@/hooks/use-project-dialogs"
+import type { Project } from "@/types/project"
+import { CreateProjectDialog } from "./create-project-dialog"
+import { DeleteProjectDialog } from "./delete-project-dialog"
+import { EditorNavbar } from "./editor-navbar"
+import { ProjectSidebar } from "./project-sidebar"
+import { RenameProjectDialog } from "./rename-project-dialog"
 
 export function EditorWorkspace() {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
+
+  const {
+    isCreateOpen,
+    isRenameOpen,
+    isDeleteOpen,
+    selectedProject,
+    activeProject,
+    handleOpenProject,
+    projectName,
+    projectSlug,
+    setProjectName,
+    isLoading,
+    ownedProjects,
+    sharedProjects,
+    openCreateDialog,
+    openRenameDialog,
+    openDeleteDialog,
+    closeDialog,
+    handleCreateProject,
+    handleRenameProject,
+    handleDeleteProject,
+  } = useProjectDialogs()
+
+  const onSelectProject = React.useCallback(
+    (project: Project) => {
+      handleOpenProject(project)
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setIsSidebarOpen(false)
+      }
+    },
+    [handleOpenProject]
+  )
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-base text-copy-primary">
       <EditorNavbar
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-        title="Ghost AI"
+        title={activeProject ? activeProject.name : "Ghost AI"}
       />
 
       <div className="relative flex flex-1 overflow-hidden">
@@ -20,23 +60,81 @@ export function EditorWorkspace() {
         <ProjectSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onNewProject={openCreateDialog}
+          onOpenProject={onSelectProject}
+          activeProjectId={activeProject?.id}
+          ownedProjects={ownedProjects}
+          sharedProjects={sharedProjects}
+          onRenameProject={openRenameDialog}
+          onDeleteProject={openDeleteDialog}
         />
 
-        {/* Center Canvas area */}
+        {/* Center Canvas area: Editor Home or Active Project Workspace */}
         <main className="relative flex flex-1 items-center justify-center bg-base p-6">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface border border-surface-border text-brand font-mono font-bold text-xl">
-              G
+          {activeProject ? (
+            <div className="flex flex-col items-center text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand/20 bg-brand-dim text-brand">
+                <FolderKanban className="h-6 w-6" />
+              </div>
+              <h1 className="mt-3 text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
+                {activeProject.name}
+              </h1>
+              <p className="mt-1 font-mono text-xs text-copy-muted">
+                /{activeProject.slug}
+              </p>
+              <p className="mt-3 max-w-sm text-sm text-copy-muted">
+                Architecture workspace ready. Liveblocks &amp; React Flow canvas integration will follow in the next phase.
+              </p>
             </div>
-            <h2 className="text-lg font-semibold text-copy-primary">
-              System Design Canvas
-            </h2>
-            <p className="max-w-sm text-sm text-copy-muted">
-              Select or create a project from the left sidebar to start collaborating.
-            </p>
-          </div>
+          ) : (
+            <div className="flex max-w-md flex-col items-center text-center">
+              <h1 className="text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
+                Create a project or open an existing one
+              </h1>
+              <p className="mt-2 text-sm text-copy-muted">
+                Start a new architecture workspace, or choose a project from the sidebar.
+              </p>
+              <Button
+                onClick={openCreateDialog}
+                className="mt-6 gap-2 rounded-xl font-medium"
+                size="default"
+              >
+                <Plus className="h-4 w-4" />
+                New Project
+              </Button>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* Project Dialogs */}
+      <CreateProjectDialog
+        open={isCreateOpen}
+        onClose={closeDialog}
+        name={projectName}
+        slug={projectSlug}
+        onChangeName={setProjectName}
+        onSubmit={handleCreateProject}
+        isLoading={isLoading}
+      />
+
+      <RenameProjectDialog
+        open={isRenameOpen}
+        onClose={closeDialog}
+        project={selectedProject}
+        name={projectName}
+        onChangeName={setProjectName}
+        onSubmit={handleRenameProject}
+        isLoading={isLoading}
+      />
+
+      <DeleteProjectDialog
+        open={isDeleteOpen}
+        onClose={closeDialog}
+        project={selectedProject}
+        onConfirm={handleDeleteProject}
+        isLoading={isLoading}
+      />
     </div>
-  );
+  )
 }
