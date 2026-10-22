@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Phase 4: Project Dialogs & Editor Home (Complete)
+- Phase 5: Prisma Schema & Data Layer (Complete)
 
 ## Current Goal
 
-- Awaiting next feature spec (e.g. Canvas integration with Liveblocks & React Flow or project persistence).
+- Awaiting next feature spec (e.g. Canvas integration with Liveblocks & React Flow, or project persistence / API routes).
 
 ## Completed
 
@@ -16,6 +16,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `02-editor.md`: Implemented base chrome components that frame the editor screen: `components/editor/editor-navbar.tsx` (fixed-height top navbar with left, center, right sections, sidebar toggle with `PanelLeftOpen`/`PanelLeftClose` icons, and subtle bottom border) and `components/editor/project-sidebar.tsx` (floating overlay shell sliding from left without pushing page content, `Projects` header with close button, shadcn `Tabs` for "My Projects" and "Shared" with placeholder states, and full-width "New Project" button with `Plus` icon). Created `components/editor/editor-dialog.tsx` implementing the dialog pattern with dark tokens, supporting title, description, and footer actions. All components type-checked and lint-free.
 - `03-auth.md`: Installed `@clerk/ui` and configured Clerk authentication across the Next.js app. Created `lib/clerk-theme.ts` with `dark` theme from `@clerk/ui/themes` and appearance variable overrides mapped to the design system CSS variables in `globals.css` (no hardcoded colors). Wrapped `app/layout.tsx` in `ClerkProvider`. Implemented `proxy.ts` at project root protecting all routes by default except public auth paths matching `NEXT_PUBLIC_CLERK_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_SIGN_UP_URL`. Updated `/` (`app/page.tsx`) to redirect authenticated users to `/editor` and unauthenticated users to `/sign-in`. Built minimal responsive two-panel `AuthShell` (`components/auth/auth-shell.tsx`) with left branding/feature list and right centered form on large screens and form only on small screens. Created catch-all auth pages `app/sign-in/[[...sign-in]]/page.tsx` and `app/sign-up/[[...sign-up]]/page.tsx`. Added Clerk's `UserButton` to `components/editor/editor-navbar.tsx` right section. Created protected `/editor` workspace page (`app/editor/page.tsx`). Tested and verified with `tsc --noEmit`, ESLint, `npm run build`, and live HTTP route redirects (status 307 to `/sign-in` for protected paths, 200 for auth pages).
 - `04-project-dialogs.md`: Built the `/editor` home screen and project dialogs/sidebar actions using mock data without API calls or persistence. Reused editor chrome layout and added centered minimal call-to-action (`Create a project or open an existing one`, description, and `New Project` button with `Plus` icon) without card wrappers. Implemented `CreateProjectDialog` with live slug preview that dynamically updates as the user types, `RenameProjectDialog` with prefilled input, current project name description, autofocus, and Enter-key submission, and `DeleteProjectDialog` with destructive confirmation only and no input. Created `hooks/use-project-dialogs.ts` managing dialog visibility, form state, and loading state. Updated `ProjectSidebar` with project item actions (rename and delete) only shown for owned projects and hidden for shared projects, plus mobile backdrop scrim and outside tap-to-close behavior. All checks verified with `tsc --noEmit`, `eslint`, and production build.
+- `05-prisma.md`: Created `prisma/models/project.prisma` defining `Project` (with `ownerId` mapped to Clerk user, `name`, optional `description`, `status` enum `ProjectStatus` (`DRAFT`, `ARCHIVED`), `canvasJsonPath` for future blob storage, timestamps, and indexes on `ownerId` and `createdAt`), and `ProjectCollaborator` (with cascade delete relation to `Project`, collaborator `email`, `createdAt`, `@@unique([projectId, email])`, and indexes on `email` and `[projectId, createdAt]`). Set up multi-file Prisma schema configuration and loaded environment variables in `prisma.config.ts`. Implemented cached singleton in `lib/prisma.ts` with connection branching (using `accelerateUrl` for `prisma+postgres://` and `@prisma/adapter-pg` driver adapter for direct PostgreSQL connection strings) and global hot-reload caching in development. Generated and applied the initial migration (`20261022162917_init`) to the PostgreSQL database, verified live client query via `prisma.project.count()`, and verified with `tsc --noEmit`, `eslint`, and `npm run build`.
 
 ## In Progress
 
@@ -23,7 +24,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Canvas integration and project management setup (Liveblocks + React Flow).
+- Canvas integration and project management setup (Liveblocks + React Flow) or project persistence API handlers.
 
 ## Open Questions
 
@@ -37,6 +38,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - Editor chrome components (`EditorNavbar`, `ProjectSidebar`, `EditorDialog`) organized under `components/editor/` adhering to the dark design tokens and floating panel radius (`rounded-2xl` for sidebars, `rounded-3xl` for modals).
 - Clerk configured with `@clerk/ui/themes` `dark` base theme and custom CSS variable overrides so all Clerk components adhere to Ghost AI's palette without hardcoded values.
 - Route protection enforced at project root using `proxy.ts` (Next.js 16 convention) with `clerkMiddleware` and `createRouteMatcher` for public routes defined via standard Clerk environment variables.
+- Configured Prisma 7 schema using multi-file modular layout under `prisma/` with `prisma/schema.prisma` declaring the PostgreSQL datasource and `prisma-client-js` generator, and `prisma/models/project.prisma` declaring the domain models and enums.
+- Prisma client instantiated via `lib/prisma.ts` as a cached singleton with global dev-mode memoization, supporting dynamic connection routing (Prisma Accelerate for `prisma+postgres://` URLs and `@prisma/adapter-pg` driver adapter for standard PostgreSQL URLs).
 
 ## Session Notes
 
@@ -52,3 +55,4 @@ Update this file whenever the current phase, active feature, or implementation s
 - Fixed rename input submission in `components/editor/rename-project-dialog.tsx`: removed custom `onKeyDown` listener so Enter key relies on the native form submission pathway, preventing premature submission during IME composition while preserving native submit behavior. Verified with `tsc --noEmit`, ESLint, and production build.
 - Updated `lib/slug.ts` and `hooks/use-project-dialogs.ts`: added Unicode NFD normalization and combining diacritical mark stripping to `slugify` so accented characters retain base letters (e.g. 'café' -> 'cafe'), and ensured empty slug results fall back safely (creation uses a timestamp-based `project-${Date.now()}` slug, while renaming preserves the existing non-empty `selectedProject.slug` and falls back to `project-${selectedProject.id}` only when that slug is empty). Verified with `tsc --noEmit`, ESLint, and production build.
 - Refactored project row semantics in `components/editor/project-sidebar.tsx`: replaced nested `role="button"` container with a plain `<div>` row container holding a dedicated native Open `<button>` and sibling Rename/Delete `<button>`s, fixing nested interactive accessibility violations and ensuring correct Tab navigation and screen-reader announcements. Verified with `tsc --noEmit`, ESLint, and production build.
+- Completed implementation of `context/feature-specs/05-prisma.md`: fixed malformed quotes in `.env` and `.env.local` for `DATABASE_URL`, imported `dotenv/config` in `prisma.config.ts`, created `prisma/models/project.prisma` (`Project` and `ProjectCollaborator` models, `ProjectStatus` enum with indexes and cascade delete relation), created `lib/prisma.ts` cached singleton branching by `DATABASE_URL` (`prisma+postgres://` vs `@prisma/adapter-pg`), executed and applied initial migration `20261022162917_init`, generated the client, and verified live database connectivity, TypeScript compilation, linting, and Next.js production build.
