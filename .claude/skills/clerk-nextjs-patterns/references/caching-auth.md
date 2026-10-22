@@ -27,7 +27,7 @@ export default async function ProfilePage() {
 
 ```typescript
 'use server';
-import { revalidateTag } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { auth } from '@clerk/nextjs/server';
 
 export async function updateProfile(formData: FormData) {
@@ -38,7 +38,7 @@ export async function updateProfile(formData: FormData) {
     where: { id: userId },
     data: { name: formData.get('name') as string },
   });
-  revalidateTag(`user-${userId}`);
+  updateTag(`user-${userId}`);
 }
 ```
 

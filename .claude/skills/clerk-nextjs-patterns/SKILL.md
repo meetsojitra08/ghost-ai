@@ -70,7 +70,7 @@ export default async function Page() {
 
 ### Conditional Rendering with `<Show>`
 
-For client-side conditional rendering based on auth state. `<Show>` covers both authentication checks and authorization (feature, plan, role, permission) in one component.
+For client-side conditional rendering based on auth state. `<Show>` covers both authentication checks and authorization (feature, plan, role, permission) in one component. Note that `<Show>` controls client-side visibility and is only for visual UI controls, not a secure authorization boundary for sensitive content; always authorize access on the server (in the page, layout, data loader, or Server Action) before rendering sensitive children.
 
 **Authentication check:**
 
@@ -211,6 +211,7 @@ if (!token) return res.status(401).json({ error: 'No token' })
 try {
   const claims = await verifyToken(token, {
     jwtKey: process.env.CLERK_JWT_KEY,
+    authorizedParties: ['https://example.com', 'https://app.example.com'],
   })
   // claims.sub = userId
 } catch {
@@ -227,9 +228,14 @@ const publicKey = process.env.CLERK_PEM_PUBLIC_KEY!.replace(/\\n/g, '\n')
 const token = req.headers.authorization?.replace('Bearer ', '')
 if (!token) return res.status(401).json({ error: 'No token' })
 
+const allowedParties = ['https://example.com', 'https://app.example.com']
+
 try {
   const claims = jwt.verify(token, publicKey, { algorithms: ['RS256'] }) as jwt.JwtPayload
-  // Manually check exp and nbf (jsonwebtoken does this automatically, but verify azp if needed)
+  // Explicit azp check so signature verification alone does not accept unintended origins
+  if (!claims.azp || !allowedParties.includes(claims.azp as string)) {
+    return res.status(403).json({ error: 'Unauthorized party (azp)' })
+  }
   // claims.sub = userId
 } catch {
   return res.status(401).json({ error: 'Invalid or expired token' })

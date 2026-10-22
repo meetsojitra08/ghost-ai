@@ -14,8 +14,8 @@ interface AuthShellProps {
 export function AuthShell({ children }: AuthShellProps) {
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-base text-copy-primary font-sans antialiased">
-      {/* Left panel: 50% width on large screens with differentiated dark surface background */}
-      <div className="flex w-full lg:w-1/2 flex-col justify-between border-b lg:border-b-0 lg:border-r border-surface-border bg-surface p-8 sm:p-12 xl:p-16 2xl:p-20">
+      {/* Left panel: 50% width on large screens with differentiated dark surface background, hidden on mobile */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between border-r border-surface-border bg-surface p-8 sm:p-12 xl:p-16 2xl:p-20">
         {/* Top: Compact Logo */}
         <div className="flex items-center gap-3">
           <div className="h-7 w-7 rounded-lg bg-brand shrink-0" />

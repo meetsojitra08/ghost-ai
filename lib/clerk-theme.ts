@@ -7,6 +7,7 @@ import { dark } from "@clerk/ui/themes";
  * All styling strictly follows context/ui-context.md.
  */
 export const clerkAppearance = {
+  theme: dark,
   baseTheme: dark,
   variables: {
     colorPrimary: "var(--accent-primary)",

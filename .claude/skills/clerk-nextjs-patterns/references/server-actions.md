@@ -41,13 +41,13 @@ export async function createTeamProject(formData: FormData) {
 import { auth } from '@clerk/nextjs/server';
 
 export async function deleteProject(projectId: string) {
-  const { userId, has } = await auth();
-  if (!userId) throw new Error('Unauthorized');
+  const { userId, orgId, has } = await auth();
+  if (!userId || !orgId) throw new Error('Unauthorized');
 
   const canDelete = await has({ permission: 'org:project:delete' });
   if (!canDelete) throw new Error('Missing permission');
 
-  await db.projects.delete({ where: { id: projectId } });
+  await db.projects.delete({ where: { id: projectId, organizationId: orgId } });
 }
 ```
 
