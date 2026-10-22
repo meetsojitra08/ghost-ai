@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { UserButton } from "@clerk/nextjs"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -12,6 +13,7 @@ export interface EditorNavbarProps
   onToggleSidebar: () => void
   title?: React.ReactNode
   centerContent?: React.ReactNode
+  rightContent?: React.ReactNode
 }
 
 export function EditorNavbar({
@@ -19,6 +21,7 @@ export function EditorNavbar({
   onToggleSidebar,
   title,
   centerContent,
+  rightContent,
   className,
   ...props
 }: EditorNavbarProps) {
@@ -59,8 +62,11 @@ export function EditorNavbar({
         {centerContent ?? null}
       </div>
 
-      {/* Right section: stays empty for now */}
-      <div className="flex items-center justify-end" />
+      {/* Right section: user profile settings and logout */}
+      <div className="flex items-center justify-end gap-3">
+        {rightContent ?? null}
+        <UserButton />
+      </div>
     </header>
   )
 }
