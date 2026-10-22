@@ -1,10 +1,20 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const signInPath = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in";
-const signUpPath = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up";
+function getPathname(urlOrPath: string): string {
+  try {
+    return new URL(urlOrPath, "http://localhost").pathname;
+  } catch {
+    return urlOrPath.startsWith("/") ? urlOrPath : `/${urlOrPath}`;
+  }
+}
 
-// Public auth routes defined using existing Clerk environment variables
+const signInPath = getPathname(process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in");
+const signUpPath = getPathname(process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up");
+
+// Public auth routes resolving mounted pages and configured URLs
 const isPublicRoute = createRouteMatcher([
+  "/sign-in(.*)",
+  "/sign-up(.*)",
   `${signInPath}(.*)`,
   `${signUpPath}(.*)`,
 ]);

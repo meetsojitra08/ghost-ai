@@ -30,12 +30,12 @@
     {
       "id": 3,
       "prompt": "my homepage is a client component that uses useUser to check if the user is signed in. convert it to use clerk's Show component pattern instead so it can be a server component with conditional rendering.",
-      "expected_output": "Converts home page to use Show (preferred in Core 3) or SignedIn/SignedOut (Core 2) components instead of useUser hook",
+      "expected_output": "Converts home page to use Show component pattern instead of useUser hook",
       "scaffold": "nextjs-basic-auth",
       "assertions": [
         "Removes 'use client' directive from home page",
         "Removes useUser hook import and usage",
-        "Uses Show with when='signed-in' (preferred) OR SignedIn/SignedOut components from @clerk/nextjs for conditional rendering",
+        "Uses Show with when='signed-in' from @clerk/nextjs for conditional rendering",
         "Preserves the same visual output (welcome message when signed in, sign-in prompt when not)",
         "Page works as a server component"
       ]
@@ -61,7 +61,7 @@
       "scaffold": "nextjs-basic-auth",
       "assertions": [
         "Uses getToken with a template parameter (e.g. 'hasura') to get a custom JWT",
-        "Uses either auth() server-side or useAuth() client-side to access getToken",
+        "Uses server-side auth() to access getToken",
         "Passes the token as Authorization Bearer header to the external API call",
         "Handles the case where getToken returns null (user not authenticated)"
       ]

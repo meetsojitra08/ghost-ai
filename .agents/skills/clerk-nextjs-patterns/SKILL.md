@@ -121,7 +121,7 @@ import { Show } from '@clerk/nextjs'
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `undefined` userId in Server Component | Missing `await` | `await auth()` not `auth()` |
-| Auth not working on API routes | Missing matcher | Add `'/(api|trpc)(.*)'` to `proxy.ts` (Next.js <=15: `middleware.ts`) |
+| Auth not working on API routes | Missing matcher | Add `'/(api\|trpc)(.*)'` to `proxy.ts` (Next.js <=15: `middleware.ts`) |
 | Cache returns wrong user's data | Missing userId in key | Include `userId` in `unstable_cache` key |
 | Mutations bypass auth | Unprotected Server Action | Check `auth()` at start of action |
 | Protected page returns 200, not 307, while signed out | The redirect happened after streaming started (e.g. under a `loading.tsx`) | Confirm the body redirects to sign-in and has no protected data. Keep the check in the page |
@@ -205,7 +205,7 @@ For standalone API servers that receive Clerk session tokens from the `Authoriza
 ```typescript
 import { verifyToken } from '@clerk/backend'
 
-const token = req.headers.authorization?.replace('Bearer ', '')
+const token = req.headers.authorization?.replace('Bearer ', '') || req.cookies?.__session
 if (!token) return res.status(401).json({ error: 'No token' })
 
 try {
@@ -225,15 +225,15 @@ try {
 import jwt from 'jsonwebtoken'
 
 const publicKey = process.env.CLERK_PEM_PUBLIC_KEY!.replace(/\\n/g, '\n')
-const token = req.headers.authorization?.replace('Bearer ', '')
+const token = req.headers.authorization?.replace('Bearer ', '') || req.cookies?.__session
 if (!token) return res.status(401).json({ error: 'No token' })
 
 const allowedParties = ['https://example.com', 'https://app.example.com']
 
 try {
   const claims = jwt.verify(token, publicKey, { algorithms: ['RS256'] }) as jwt.JwtPayload
-  // Explicit azp check so signature verification alone does not accept unintended origins
-  if (!claims.azp || !allowedParties.includes(claims.azp as string)) {
+  // Verify azp when present so signature verification alone does not accept unintended origins
+  if (claims.azp && !allowedParties.includes(claims.azp as string)) {
     return res.status(403).json({ error: 'Unauthorized party (azp)' })
   }
   // claims.sub = userId

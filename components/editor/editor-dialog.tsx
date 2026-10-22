@@ -26,27 +26,27 @@ export interface EditorDialogBaseProps {
 }
 
 type DialogWithTitle = EditorDialogBaseProps & {
-  title: React.ReactNode
+  title: NonNullable<React.ReactNode>
   "aria-label"?: string
   ariaLabel?: string
 }
 
-type DialogWithAriaLabel = EditorDialogBaseProps & {
-  title?: React.ReactNode
+type DialogWithoutTitleKebab = EditorDialogBaseProps & {
+  title?: null | undefined
   "aria-label": string
   ariaLabel?: string
 }
 
-type DialogWithAriaLabelCamel = EditorDialogBaseProps & {
-  title?: React.ReactNode
+type DialogWithoutTitleCamel = EditorDialogBaseProps & {
+  title?: null | undefined
   "aria-label"?: string
   ariaLabel: string
 }
 
 export type EditorDialogProps =
   | DialogWithTitle
-  | DialogWithAriaLabel
-  | DialogWithAriaLabelCamel
+  | DialogWithoutTitleKebab
+  | DialogWithoutTitleCamel
 
 /**
  * Standard Dialog Pattern for the Ghost AI editor chrome.
@@ -74,7 +74,7 @@ export function EditorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={showCloseButton}
-        aria-label={accessibleLabel}
+        aria-label={!title ? accessibleLabel : undefined}
         className={cn(
           "rounded-3xl border border-surface-border bg-elevated text-copy-primary shadow-2xl backdrop-blur-md sm:max-w-md",
           className
