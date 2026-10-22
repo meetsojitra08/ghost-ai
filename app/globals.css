@@ -171,4 +171,9 @@
   button, input, optgroup, select, textarea {
     font-family: inherit;
   }
+
+  [data-slot="dialog-overlay"] {
+    background-color: rgba(8, 8, 9, 0.75) !important;
+    backdrop-filter: blur(6px) !important;
+  }
 }

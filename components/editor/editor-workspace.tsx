@@ -1,11 +1,38 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { EditorNavbar } from "./editor-navbar";
-import { ProjectSidebar } from "./project-sidebar";
+import * as React from "react"
+import { Plus } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { useProjectDialogs } from "@/hooks/use-project-dialogs"
+import { CreateProjectDialog } from "./create-project-dialog"
+import { DeleteProjectDialog } from "./delete-project-dialog"
+import { EditorNavbar } from "./editor-navbar"
+import { ProjectSidebar } from "./project-sidebar"
+import { RenameProjectDialog } from "./rename-project-dialog"
 
 export function EditorWorkspace() {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
+
+  const {
+    isCreateOpen,
+    isRenameOpen,
+    isDeleteOpen,
+    selectedProject,
+    projectName,
+    projectSlug,
+    setProjectName,
+    isLoading,
+    ownedProjects,
+    sharedProjects,
+    openCreateDialog,
+    openRenameDialog,
+    openDeleteDialog,
+    closeDialog,
+    handleCreateProject,
+    handleRenameProject,
+    handleDeleteProject,
+  } = useProjectDialogs()
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-base text-copy-primary">
@@ -20,23 +47,62 @@ export function EditorWorkspace() {
         <ProjectSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onNewProject={openCreateDialog}
+          ownedProjects={ownedProjects}
+          sharedProjects={sharedProjects}
+          onRenameProject={openRenameDialog}
+          onDeleteProject={openDeleteDialog}
         />
 
-        {/* Center Canvas area */}
+        {/* Center Canvas area: Editor Home */}
         <main className="relative flex flex-1 items-center justify-center bg-base p-6">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface border border-surface-border text-brand font-mono font-bold text-xl">
-              G
-            </div>
-            <h2 className="text-lg font-semibold text-copy-primary">
-              System Design Canvas
-            </h2>
-            <p className="max-w-sm text-sm text-copy-muted">
-              Select or create a project from the left sidebar to start collaborating.
+          <div className="flex max-w-md flex-col items-center text-center">
+            <h1 className="text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
+              Create a project or open an existing one
+            </h1>
+            <p className="mt-2 text-sm text-copy-muted">
+              Start a new architecture workspace, or choose a project from the sidebar.
             </p>
+            <Button
+              onClick={openCreateDialog}
+              className="mt-6 gap-2 rounded-xl font-medium"
+              size="default"
+            >
+              <Plus className="h-4 w-4" />
+              New Project
+            </Button>
           </div>
         </main>
       </div>
+
+      {/* Project Dialogs */}
+      <CreateProjectDialog
+        open={isCreateOpen}
+        onClose={closeDialog}
+        name={projectName}
+        slug={projectSlug}
+        onChangeName={setProjectName}
+        onSubmit={handleCreateProject}
+        isLoading={isLoading}
+      />
+
+      <RenameProjectDialog
+        open={isRenameOpen}
+        onClose={closeDialog}
+        project={selectedProject}
+        name={projectName}
+        onChangeName={setProjectName}
+        onSubmit={handleRenameProject}
+        isLoading={isLoading}
+      />
+
+      <DeleteProjectDialog
+        open={isDeleteOpen}
+        onClose={closeDialog}
+        project={selectedProject}
+        onConfirm={handleDeleteProject}
+        isLoading={isLoading}
+      />
     </div>
-  );
+  )
 }
