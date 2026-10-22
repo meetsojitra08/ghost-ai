@@ -133,6 +133,7 @@ export function ProjectSidebar({
                       tabIndex={0}
                       onClick={() => onOpenProject?.(project)}
                       onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault()
                           onOpenProject?.(project)
@@ -238,6 +239,7 @@ export function ProjectSidebar({
                       tabIndex={0}
                       onClick={() => onOpenProject?.(project)}
                       onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault()
                           onOpenProject?.(project)

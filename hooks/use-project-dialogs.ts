@@ -111,9 +111,11 @@ export function useProjectDialogs(
       if (!trimmedName) return
 
       setIsLoading(true)
-      const generatedSlug = projectSlug || slugify(trimmedName)
+      const projectId = `proj-${Date.now()}`
+      const baseSlug = projectSlug || slugify(trimmedName)
+      const generatedSlug = baseSlug || `project-${Date.now()}`
       const newProject: Project = {
-        id: `proj-${Date.now()}`,
+        id: projectId,
         name: trimmedName,
         slug: generatedSlug,
         isOwner: true,
@@ -136,7 +138,9 @@ export function useProjectDialogs(
       if (!trimmedName) return
 
       setIsLoading(true)
-      const updatedSlug = slugify(trimmedName)
+      const baseSlug = slugify(trimmedName)
+      const updatedSlug =
+        baseSlug || selectedProject.slug || `project-${selectedProject.id}`
       setProjects((prev) =>
         prev.map((p) =>
           p.id === selectedProject.id
