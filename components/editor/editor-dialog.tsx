@@ -32,13 +32,13 @@ type DialogWithTitle = EditorDialogBaseProps & {
 }
 
 type DialogWithoutTitleKebab = EditorDialogBaseProps & {
-  title?: null | undefined
+  title?: null | undefined | boolean
   "aria-label": string
   ariaLabel?: string
 }
 
 type DialogWithoutTitleCamel = EditorDialogBaseProps & {
-  title?: null | undefined
+  title?: null | undefined | boolean
   "aria-label"?: string
   ariaLabel: string
 }
@@ -70,19 +70,24 @@ export function EditorDialog({
 }: EditorDialogProps) {
   const accessibleLabel = ariaLabelProp ?? ariaLabel
 
+  const hasMeaningfulTitle =
+    title != null &&
+    typeof title !== "boolean" &&
+    (typeof title !== "string" || title.trim().length > 0)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={showCloseButton}
-        aria-label={!title ? accessibleLabel : undefined}
+        aria-label={hasMeaningfulTitle ? undefined : accessibleLabel}
         className={cn(
           "rounded-3xl border border-surface-border bg-elevated text-copy-primary shadow-2xl backdrop-blur-md sm:max-w-md",
           className
         )}
       >
-        {(title || description) && (
+        {(hasMeaningfulTitle || description) && (
           <DialogHeader>
-            {title != null && title !== false ? (
+            {hasMeaningfulTitle ? (
               <DialogTitle className="text-base font-semibold tracking-tight text-copy-primary">
                 {title}
               </DialogTitle>

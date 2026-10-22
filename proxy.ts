@@ -1,20 +1,33 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-function getPathname(urlOrPath: string): string {
+const MOUNTED_AUTH_ROUTES = {
+  signIn: "/sign-in",
+  signUp: "/sign-up",
+} as const;
+
+/**
+ * Resolves configured authentication paths to mounted Next.js routes.
+ * Normalizes full URLs to pathnames and falls back to supported default paths
+ * (/sign-in, /sign-up) if the configured path does not match a mounted route.
+ */
+function resolveMountedAuthPath(envPathOrUrl: string | undefined, defaultPath: string): string {
+  if (!envPathOrUrl) return defaultPath;
   try {
-    return new URL(urlOrPath, "http://localhost").pathname;
+    const pathname = new URL(envPathOrUrl, "http://localhost").pathname.replace(/\/$/, "");
+    if (pathname === defaultPath || pathname.startsWith(`${defaultPath}/`)) {
+      return pathname;
+    }
+    return defaultPath;
   } catch {
-    return urlOrPath.startsWith("/") ? urlOrPath : `/${urlOrPath}`;
+    return defaultPath;
   }
 }
 
-const signInPath = getPathname(process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in");
-const signUpPath = getPathname(process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up");
+const signInPath = resolveMountedAuthPath(process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL, MOUNTED_AUTH_ROUTES.signIn);
+const signUpPath = resolveMountedAuthPath(process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL, MOUNTED_AUTH_ROUTES.signUp);
 
-// Public auth routes resolving mounted pages and configured URLs
+// Public auth routes defined using verified mounted auth routes
 const isPublicRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
   `${signInPath}(.*)`,
   `${signUpPath}(.*)`,
 ]);
