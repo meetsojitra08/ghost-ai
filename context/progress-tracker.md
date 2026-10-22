@@ -4,16 +4,17 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Phase 2: Editor Chrome & Layout (Complete)
+- Phase 3: Authentication & Route Protection (Complete)
 
 ## Current Goal
 
-- Awaiting next feature spec (e.g. Canvas integration or Authentication & project management).
+- Awaiting next feature spec (e.g. Canvas integration with Liveblocks & React Flow or project persistence).
 
 ## Completed
 
 - `01-design-system.md`: Configured shadcn/ui with dark theme tokens from `context/ui-context.md`, added UI primitives (Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea), installed `lucide-react`, set up `lib/utils.ts` with reusable `cn()` helper, configured CSS variables in `globals.css` with dark theme and `@theme inline` mappings, and verified compilation and TypeScript types.
 - `02-editor.md`: Implemented base chrome components that frame the editor screen: `components/editor/editor-navbar.tsx` (fixed-height top navbar with left, center, right sections, sidebar toggle with `PanelLeftOpen`/`PanelLeftClose` icons, and subtle bottom border) and `components/editor/project-sidebar.tsx` (floating overlay shell sliding from left without pushing page content, `Projects` header with close button, shadcn `Tabs` for "My Projects" and "Shared" with placeholder states, and full-width "New Project" button with `Plus` icon). Created `components/editor/editor-dialog.tsx` implementing the dialog pattern with dark tokens, supporting title, description, and footer actions. All components type-checked and lint-free.
+- `03-auth.md`: Installed `@clerk/ui` and configured Clerk authentication across the Next.js app. Created `lib/clerk-theme.ts` with `dark` theme from `@clerk/ui/themes` and appearance variable overrides mapped to the design system CSS variables in `globals.css` (no hardcoded colors). Wrapped `app/layout.tsx` in `ClerkProvider`. Implemented `proxy.ts` at project root protecting all routes by default except public auth paths matching `NEXT_PUBLIC_CLERK_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_SIGN_UP_URL`. Updated `/` (`app/page.tsx`) to redirect authenticated users to `/editor` and unauthenticated users to `/sign-in`. Built minimal responsive two-panel `AuthShell` (`components/auth/auth-shell.tsx`) with left branding/feature list and right centered form on large screens and form only on small screens. Created catch-all auth pages `app/sign-in/[[...sign-in]]/page.tsx` and `app/sign-up/[[...sign-up]]/page.tsx`. Added Clerk's `UserButton` to `components/editor/editor-navbar.tsx` right section. Created protected `/editor` workspace page (`app/editor/page.tsx`). Tested and verified with `tsc --noEmit`, ESLint, `npm run build`, and live HTTP route redirects (status 307 to `/sign-in` for protected paths, 200 for auth pages).
 
 ## In Progress
 
@@ -21,7 +22,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Canvas integration and project management setup.
+- Canvas integration and project management setup (Liveblocks + React Flow).
 
 ## Open Questions
 
@@ -33,7 +34,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - shadcn/ui configured with `base-nova` style and `@base-ui/react` primitives.
 - Dark theme enforced across `:root` and `.dark` with no default light styling.
 - Editor chrome components (`EditorNavbar`, `ProjectSidebar`, `EditorDialog`) organized under `components/editor/` adhering to the dark design tokens and floating panel radius (`rounded-2xl` for sidebars, `rounded-3xl` for modals).
+- Clerk configured with `@clerk/ui/themes` `dark` base theme and custom CSS variable overrides so all Clerk components adhere to Ghost AI's palette without hardcoded values.
+- Route protection enforced at project root using `proxy.ts` (Next.js 16 convention) with `clerkMiddleware` and `createRouteMatcher` for public routes defined via standard Clerk environment variables.
 
 ## Session Notes
 
-- Completed implementation of `context/feature-specs/02-editor.md`. Verified with `npx tsc --noEmit`, `npm run lint`, and `npm run build`.
+- Completed implementation of `context/feature-specs/03-auth.md`. Verified with `npx tsc --noEmit`, `npm run lint`, `npm run build`, and endpoint curl tests.
+- Updated authentication layout to match the design screenshot: implemented a 50/50 two-panel layout with `bg-surface` (`#111114`) on the left to differentiate from `bg-base` (`#080809`), rounded cyan logo mark, exact headline and copy, 3 feature rows with Stroke Lucide icons (`History`, `Share2`, `FileText`), and applied Geist Sans typography guidelines across `html`, `body`, form controls, and Clerk themes.
+- Fixed font color visibility on auth shell: resolved Tailwind CSS v4 `@theme` token mappings in `globals.css` with explicit fallbacks so tokens (`text-copy-primary`, `text-copy-secondary`, `text-copy-muted`) compile cleanly to their theme colors without inline `style` attributes or `!important` overrides, strictly adhering to `context/code-standards.md`. Verified via `npx tsc --noEmit`, `npm run lint`, and `npm run build`.

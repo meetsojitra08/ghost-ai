@@ -1,11 +1,15 @@
-import { Button } from "@/components/ui/button";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p>Ghost AI</p>
-      <Button>Click me</Button>
+export const instant = false;
 
-    </div>
-  );
+export default async function HomePage() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/editor");
+  }
+
+  const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in";
+  redirect(signInUrl);
 }

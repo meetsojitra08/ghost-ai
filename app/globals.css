@@ -1,94 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-
-  /* Ghost AI design tokens mapped to Tailwind utilities */
-  --color-base: var(--bg-base);
-  --color-surface: var(--bg-surface);
-  --color-elevated: var(--bg-elevated);
-  --color-subtle: var(--bg-subtle);
-  --color-surface-elevated: var(--bg-elevated);
-  --color-surface-subtle: var(--bg-subtle);
-  --color-surface-border: var(--border-default);
-  --color-surface-border-subtle: var(--border-subtle);
-  --color-copy-primary: var(--text-primary);
-  --color-copy-secondary: var(--text-secondary);
-  --color-copy-muted: var(--text-muted);
-  --color-copy-faint: var(--text-faint);
-  --color-brand: var(--accent-primary);
-  --color-brand-dim: var(--accent-primary-dim);
-  --color-accent-dim: var(--accent-primary-dim);
-  --color-ai: var(--accent-ai);
-  --color-ai-text: var(--accent-ai-text);
-  --color-state-error: var(--state-error);
-  --color-state-success: var(--state-success);
-  --color-state-warning: var(--state-warning);
-
-  /* Literal variable name aliases for flexibility */
-  --color-bg-base: var(--bg-base);
-  --color-bg-surface: var(--bg-surface);
-  --color-bg-elevated: var(--bg-elevated);
-  --color-bg-subtle: var(--bg-subtle);
-  --color-border-default: var(--border-default);
-  --color-border-subtle: var(--border-subtle);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-text-faint: var(--text-faint);
-  --color-accent-primary: var(--accent-primary);
-  --color-accent-primary-dim: var(--accent-primary-dim);
-  --color-accent-ai: var(--accent-ai);
-  --color-accent-ai-text: var(--accent-ai-text);
-
-  /* shadcn UI semantic mapping */
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
-
-  /* Border radius scale */
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.33);
-  --radius-2xl: calc(var(--radius) * 1.66);
-  --radius-3xl: calc(var(--radius) * 2);
-  --radius-4xl: calc(var(--radius) * 2.5);
-}
 
 :root,
 .dark {
@@ -112,6 +25,28 @@
   --state-error: #ff4d4f;
   --state-success: #34d399;
   --state-warning: #fbbf24;
+
+  /* Ghost AI design tokens mapped to CSS variables for Tailwind utility classes */
+  --color-base: #080809;
+  --color-surface: #111114;
+  --color-elevated: #18181c;
+  --color-subtle: #1e1e23;
+  --color-surface-elevated: #18181c;
+  --color-surface-subtle: #1e1e23;
+  --color-surface-border: #2a2a30;
+  --color-surface-border-subtle: #3a3a42;
+  --color-copy-primary: #f0f0f4;
+  --color-copy-secondary: #c0c0cc;
+  --color-copy-muted: #808090;
+  --color-copy-faint: #505060;
+  --color-brand: #00c8d4;
+  --color-brand-dim: rgba(0, 200, 212, 0.12);
+  --color-accent-dim: rgba(0, 200, 212, 0.12);
+  --color-ai: #6457f9;
+  --color-ai-text: #8b82ff;
+  --color-state-error: #ff4d4f;
+  --color-state-success: #34d399;
+  --color-state-warning: #fbbf24;
 
   /* shadcn UI variables mapped to dark theme tokens */
   --background: var(--bg-base);
@@ -152,14 +87,88 @@
   --chart-5: #ff4d4f;
 }
 
+@theme {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Ghost AI design tokens registered in Tailwind v4 theme */
+  --color-base: var(--bg-base, #080809);
+  --color-surface: var(--bg-surface, #111114);
+  --color-elevated: var(--bg-elevated, #18181c);
+  --color-subtle: var(--bg-subtle, #1e1e23);
+  --color-surface-elevated: var(--bg-elevated, #18181c);
+  --color-surface-subtle: var(--bg-subtle, #1e1e23);
+  --color-surface-border: var(--border-default, #2a2a30);
+  --color-surface-border-subtle: var(--border-subtle, #3a3a42);
+  --color-copy-primary: var(--text-primary, #f0f0f4);
+  --color-copy-secondary: var(--text-secondary, #c0c0cc);
+  --color-copy-muted: var(--text-muted, #808090);
+  --color-copy-faint: var(--text-faint, #505060);
+  --color-brand: var(--accent-primary, #00c8d4);
+  --color-brand-dim: var(--accent-primary-dim, rgba(0, 200, 212, 0.12));
+  --color-accent-dim: var(--accent-primary-dim, rgba(0, 200, 212, 0.12));
+  --color-ai: var(--accent-ai, #6457f9);
+  --color-ai-text: var(--accent-ai-text, #8b82ff);
+  --color-state-error: var(--state-error, #ff4d4f);
+  --color-state-success: var(--state-success, #34d399);
+  --color-state-warning: var(--state-warning, #fbbf24);
+
+  /* shadcn UI semantic mapping */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring, #00c8d4);
+  --color-input: var(--input, #2a2a30);
+  --color-border: var(--border, #2a2a30);
+  --color-destructive: var(--destructive, #ff4d4f);
+  --color-accent-foreground: var(--accent-foreground, #f0f0f4);
+  --color-accent: var(--accent, #1e1e23);
+  --color-muted-foreground: var(--muted-foreground, #808090);
+  --color-muted: var(--muted, #1e1e23);
+  --color-secondary-foreground: var(--secondary-foreground, #f0f0f4);
+  --color-secondary: var(--secondary, #1e1e23);
+  --color-primary-foreground: var(--primary-foreground, #080809);
+  --color-primary: var(--primary, #00c8d4);
+  --color-popover-foreground: var(--popover-foreground, #f0f0f4);
+  --color-popover: var(--popover, #18181c);
+  --color-card-foreground: var(--card-foreground, #f0f0f4);
+  --color-card: var(--card, #111114);
+  --color-foreground: var(--foreground, #f0f0f4);
+  --color-background: var(--background, #080809);
+
+  /* Border radius scale */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.33);
+  --radius-2xl: calc(var(--radius) * 1.66);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 2.5);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
-    @apply font-sans;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  button, input, optgroup, select, textarea {
+    font-family: inherit;
   }
 }
