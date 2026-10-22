@@ -30,26 +30,6 @@ export function ProjectSidebar({
   className,
   ...props
 }: ProjectSidebarProps) {
-  const sidebarRef = React.useRef<HTMLElement>(null)
-
-  // On mobile: tapping outside the sidebar closes it
-  React.useEffect(() => {
-    if (!isOpen) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (typeof window !== "undefined" && window.innerWidth < 768) {
-        if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-          onClose()
-        }
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown)
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown)
-    }
-  }, [isOpen, onClose])
-
   return (
     <>
       {/* Mobile backdrop scrim */}
@@ -64,7 +44,6 @@ export function ProjectSidebar({
       />
 
       <aside
-        ref={sidebarRef}
         data-slot="project-sidebar"
         aria-label="Projects sidebar"
         aria-hidden={!isOpen}
