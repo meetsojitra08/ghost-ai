@@ -128,12 +128,6 @@ export function RenameProjectDialog({
               autoComplete="off"
               maxLength={50}
               className="h-10 rounded-xl border-surface-border bg-subtle px-3 pr-8 text-sm text-copy-primary placeholder:text-copy-muted/60 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 transition-all"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSubmit(e)
-                }
-              }}
             />
             {name ? (
               <button
