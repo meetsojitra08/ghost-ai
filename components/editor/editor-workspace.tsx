@@ -36,6 +36,7 @@ export function EditorWorkspace({
     roomId,
     setProjectName,
     isLoading,
+    error,
     ownedProjects,
     sharedProjects,
     openCreateDialog,
@@ -131,6 +132,7 @@ export function EditorWorkspace({
         onChangeName={setProjectName}
         onSubmit={handleCreateProject}
         isLoading={isLoading}
+        error={error}
       />
 
       <RenameProjectDialog
@@ -141,6 +143,7 @@ export function EditorWorkspace({
         onChangeName={setProjectName}
         onSubmit={handleRenameProject}
         isLoading={isLoading}
+        error={error}
       />
 
       <DeleteProjectDialog
@@ -149,6 +152,7 @@ export function EditorWorkspace({
         project={selectedProject}
         onConfirm={handleDeleteProject}
         isLoading={isLoading}
+        error={error}
       />
     </div>
   )

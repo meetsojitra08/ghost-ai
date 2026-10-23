@@ -48,11 +48,14 @@ export async function POST(req: Request) {
 
     let body: CreateProjectBody = {};
     try {
-      body = (await req.json()) as CreateProjectBody;
+      const parsed: unknown = await req.json();
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        body = parsed as CreateProjectBody;
+      }
     } catch {
       body = {};
     }
-
+    
     if (body.id !== undefined && typeof body.id !== "string") {
       return Response.json(
         { error: "Invalid project ID format" },

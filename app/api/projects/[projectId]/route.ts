@@ -37,7 +37,11 @@ export async function PATCH(req: Request, context: RouteContext) {
 
     let body: RenameProjectBody = {};
     try {
-      body = (await req.json()) as RenameProjectBody;
+      const parsed: unknown = await req.json();
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+      }
+      body = parsed as RenameProjectBody;
     } catch {
       return Response.json({ error: "Invalid JSON body" }, { status: 400 });
     }
@@ -45,6 +49,12 @@ export async function PATCH(req: Request, context: RouteContext) {
     const trimmedName = typeof body.name === "string" ? body.name.trim() : "";
     if (trimmedName.length === 0) {
       return Response.json({ error: "Project name is required" }, { status: 400 });
+    }
+    if (trimmedName.length > 50) {
+      return Response.json(
+        { error: "Project name cannot exceed 50 characters" },
+        { status: 400 }
+      );
     }
 
     const updatedProject = await prisma.project.update({

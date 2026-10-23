@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { FolderPlus, Globe, Loader2, Sparkles, X } from "lucide-react"
+import { AlertCircle, FolderPlus, Globe, Loader2, Sparkles, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,7 @@ export interface CreateProjectDialogProps {
   onChangeName: (name: string) => void
   onSubmit: (e?: React.FormEvent) => void
   isLoading?: boolean
+  error?: string | null
 }
 
 export function CreateProjectDialog({
@@ -27,6 +28,7 @@ export function CreateProjectDialog({
   onChangeName,
   onSubmit,
   isLoading = false,
+  error = null,
 }: CreateProjectDialogProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -131,6 +133,16 @@ export function CreateProjectDialog({
             ) : null}
           </div>
         </div>
+
+        {error ? (
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-xl border border-state-error/30 bg-state-error/10 px-3 py-2 text-xs text-state-error"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : null}
 
         {/* Live Room ID preview */}
         {(() => {
