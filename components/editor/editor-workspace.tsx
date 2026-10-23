@@ -4,15 +4,25 @@ import * as React from "react"
 import { FolderKanban, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { useProjectDialogs } from "@/hooks/use-project-dialogs"
-import type { Project } from "@/types/project"
+import { useProjectActions } from "@/hooks/use-project-actions"
+import { EMPTY_PROJECTS, type Project } from "@/types/project"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { DeleteProjectDialog } from "./delete-project-dialog"
 import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { RenameProjectDialog } from "./rename-project-dialog"
 
-export function EditorWorkspace() {
+export interface EditorWorkspaceProps {
+  initialOwnedProjects?: Project[]
+  initialSharedProjects?: Project[]
+  activeProject?: Project | null
+}
+
+export function EditorWorkspace({
+  initialOwnedProjects = EMPTY_PROJECTS,
+  initialSharedProjects = EMPTY_PROJECTS,
+  activeProject = null,
+}: EditorWorkspaceProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
 
   const {
@@ -20,10 +30,10 @@ export function EditorWorkspace() {
     isRenameOpen,
     isDeleteOpen,
     selectedProject,
-    activeProject,
+    activeProject: currentActiveProject,
     handleOpenProject,
     projectName,
-    projectSlug,
+    roomId,
     setProjectName,
     isLoading,
     ownedProjects,
@@ -35,7 +45,11 @@ export function EditorWorkspace() {
     handleCreateProject,
     handleRenameProject,
     handleDeleteProject,
-  } = useProjectDialogs()
+  } = useProjectActions({
+    initialOwnedProjects,
+    initialSharedProjects,
+    activeProject,
+  })
 
   const onSelectProject = React.useCallback(
     (project: Project) => {
@@ -52,7 +66,7 @@ export function EditorWorkspace() {
       <EditorNavbar
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-        title={activeProject ? activeProject.name : "Ghost AI"}
+        title={currentActiveProject ? currentActiveProject.name : "Ghost AI"}
       />
 
       <div className="relative flex flex-1 overflow-hidden">
@@ -62,7 +76,7 @@ export function EditorWorkspace() {
           onClose={() => setIsSidebarOpen(false)}
           onNewProject={openCreateDialog}
           onOpenProject={onSelectProject}
-          activeProjectId={activeProject?.id}
+          activeProjectId={currentActiveProject?.id}
           ownedProjects={ownedProjects}
           sharedProjects={sharedProjects}
           onRenameProject={openRenameDialog}
@@ -71,16 +85,16 @@ export function EditorWorkspace() {
 
         {/* Center Canvas area: Editor Home or Active Project Workspace */}
         <main className="relative flex flex-1 items-center justify-center bg-base p-6">
-          {activeProject ? (
+          {currentActiveProject ? (
             <div className="flex flex-col items-center text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand/20 bg-brand-dim text-brand">
                 <FolderKanban className="h-6 w-6" />
               </div>
               <h1 className="mt-3 text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
-                {activeProject.name}
+                {currentActiveProject.name}
               </h1>
               <p className="mt-1 font-mono text-xs text-copy-muted">
-                /{activeProject.slug}
+                /{currentActiveProject.slug}
               </p>
               <p className="mt-3 max-w-sm text-sm text-copy-muted">
                 Architecture workspace ready. Liveblocks &amp; React Flow canvas integration will follow in the next phase.
@@ -112,7 +126,8 @@ export function EditorWorkspace() {
         open={isCreateOpen}
         onClose={closeDialog}
         name={projectName}
-        slug={projectSlug}
+        slug={roomId}
+        roomId={roomId}
         onChangeName={setProjectName}
         onSubmit={handleCreateProject}
         isLoading={isLoading}

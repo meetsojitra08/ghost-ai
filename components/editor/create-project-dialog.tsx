@@ -11,7 +11,8 @@ export interface CreateProjectDialogProps {
   open: boolean
   onClose: () => void
   name: string
-  slug: string
+  slug?: string
+  roomId?: string
   onChangeName: (name: string) => void
   onSubmit: (e?: React.FormEvent) => void
   isLoading?: boolean
@@ -22,6 +23,7 @@ export function CreateProjectDialog({
   onClose,
   name,
   slug,
+  roomId,
   onChangeName,
   onSubmit,
   isLoading = false,
@@ -130,36 +132,41 @@ export function CreateProjectDialog({
           </div>
         </div>
 
-        {/* Live slug preview */}
-        <div className="rounded-2xl border border-surface-border-subtle bg-subtle/40 p-3.5 transition-all">
-          <div className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 font-medium text-copy-muted">
-              <Globe className="h-3.5 w-3.5 text-brand" />
-              Workspace Identifier
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-brand/20 bg-brand-dim px-1.5 py-0.5 font-mono text-[10px] text-brand">
-              <Sparkles className="h-2.5 w-2.5" />
-              Live preview
-            </span>
-          </div>
-
-          <div className="mt-2 flex items-center rounded-xl border border-surface-border-subtle bg-base/80 px-3 py-2 font-mono text-xs">
-            <span className="select-none text-copy-muted/70">ghost.ai/editor/</span>
-            <span className="truncate font-semibold text-brand">
-              {slug ? (
-                slug
-              ) : (
-                <span className="font-normal italic text-copy-faint">
-                  your-project-slug
+        {/* Live Room ID preview */}
+        {(() => {
+          const displayRoomId = roomId || slug || ""
+          return (
+            <div className="rounded-2xl border border-surface-border-subtle bg-subtle/40 p-3.5 transition-all">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 font-medium text-copy-muted">
+                  <Globe className="h-3.5 w-3.5 text-brand" />
+                  Liveblocks Room ID
                 </span>
-              )}
-            </span>
-          </div>
+                <span className="inline-flex items-center gap-1 rounded-md border border-brand/20 bg-brand-dim px-1.5 py-0.5 font-mono text-[10px] text-brand">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  Live preview
+                </span>
+              </div>
 
-          <p className="mt-2 text-[11px] text-copy-muted/80">
-            Preview updates automatically as you type. Used in workspace URLs and team invites.
-          </p>
-        </div>
+              <div className="mt-2 flex items-center rounded-xl border border-surface-border-subtle bg-base/80 px-3 py-2 font-mono text-xs">
+                <span className="select-none text-copy-muted/70">ghost.ai/editor/</span>
+                <span className="truncate font-semibold text-brand">
+                  {displayRoomId ? (
+                    displayRoomId
+                  ) : (
+                    <span className="font-normal italic text-copy-faint">
+                      your-room-id
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              <p className="mt-2 text-[11px] text-copy-muted/80">
+                Preview updates automatically as you type. Aligned with your Liveblocks room ID and workspace URL.
+              </p>
+            </div>
+          )
+        })()}
       </form>
     </EditorDialog>
   )
