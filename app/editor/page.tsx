@@ -1,10 +1,23 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { EditorWorkspace } from "@/components/editor";
+import { getUserProjects, getVerifiedUserEmails } from "@/lib/projects";
 
 export const instant = false;
 
 export default async function EditorPage() {
-  await auth.protect();
+  const { userId } = await auth.protect();
+  const user = await currentUser();
+  const userEmails = getVerifiedUserEmails(user);
 
-  return <EditorWorkspace />;
+  const { ownedProjects, sharedProjects } = await getUserProjects(
+    userId,
+    userEmails
+  );
+
+  return (
+    <EditorWorkspace
+      initialOwnedProjects={ownedProjects}
+      initialSharedProjects={sharedProjects}
+    />
+  );
 }
