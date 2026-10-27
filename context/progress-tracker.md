@@ -56,6 +56,8 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Session Notes
 
+- Fixed collaborator invite race handling by mapping Prisma `P2002` to the existing 409 duplicate response, made the AI sidebar an overlay on narrow screens so the canvas retains workspace width, and prevented aborted share-list requests from clearing a newer request's loading state.
+
 - Completed implementation of `context/feature-specs/03-auth.md`. Verified with `npx tsc --noEmit`, `npm run lint`, `npm run build`, and endpoint curl tests.
 - Updated authentication layout to match the design screenshot: implemented a 50/50 two-panel layout with `bg-surface` (`#111114`) on the left to differentiate from `bg-base` (`#080809`), rounded cyan logo mark, exact headline and copy, 3 feature rows with Stroke Lucide icons (`History`, `Share2`, `FileText`), and applied Geist Sans typography guidelines across `html`, `body`, form controls, and Clerk themes.
 - Fixed font color visibility on auth shell: resolved Tailwind CSS v4 `@theme` token mappings in `globals.css` with explicit fallbacks so tokens (`text-copy-primary`, `text-copy-secondary`, `text-copy-muted`) compile cleanly to their theme colors without inline `style` attributes or `!important` overrides, strictly adhering to `context/code-standards.md`. Verified via `npx tsc --noEmit`, `npm run lint`, and `npm run build`.

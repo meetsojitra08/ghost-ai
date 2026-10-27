@@ -57,7 +57,9 @@ export function ShareDialog({
         if (cause instanceof DOMException && cause.name === "AbortError") return
         setError(cause instanceof Error ? cause.message : "Could not load collaborators")
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false)
+      })
     return () => controller.abort()
   }, [endpoint, open])
 

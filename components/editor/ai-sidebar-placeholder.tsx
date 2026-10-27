@@ -24,7 +24,7 @@ export function AiSidebarPlaceholder({
     <aside
       data-slot="ai-sidebar-placeholder"
       className={cn(
-        "relative flex h-full w-80 md:w-88 shrink-0 flex-col border-l border-surface-border-subtle bg-surface text-copy-primary animate-in slide-in-from-right duration-200 z-20",
+        "absolute inset-y-0 right-0 z-20 flex h-full w-[min(20rem,calc(100vw-4rem))] shrink-0 flex-col border-l border-surface-border-subtle bg-surface text-copy-primary animate-in slide-in-from-right duration-200 md:relative md:inset-auto md:w-88",
         className
       )}
       {...props}

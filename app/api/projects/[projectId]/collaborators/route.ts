@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { Prisma, type ProjectCollaborator } from "@prisma/client";
 import { enrichCollaborators } from "@/lib/collaborators";
 import { prisma } from "@/lib/prisma";
 import { checkProjectAccess, getClerkIdentity } from "@/lib/project-access";
@@ -74,9 +75,23 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "This person already has access" }, { status: 409 });
   }
 
-  const collaborator = await prisma.projectCollaborator.create({
-    data: { projectId, email },
-  });
+  let collaborator: ProjectCollaborator;
+  try {
+    collaborator = await prisma.projectCollaborator.create({
+      data: { projectId, email },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "This person already has access" },
+        { status: 409 }
+      );
+    }
+    throw error;
+  }
   const [profile] = await enrichCollaborators([collaborator]);
   return NextResponse.json({ collaborator: profile }, { status: 201 });
 }
