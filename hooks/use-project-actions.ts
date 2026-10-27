@@ -224,11 +224,14 @@ export function useProjectActions({
           throw new Error(errorData.error || "Failed to rename project")
         }
 
-        // Optimistically update project name in list
+        // Optimistically update project name in list and active project
         setOwnedProjects((prev) =>
           prev.map((p) =>
             p.id === selectedProject.id ? { ...p, name: trimmedName } : p
           )
+        )
+        setActiveProject((prev) =>
+          prev && prev.id === selectedProject.id ? { ...prev, name: trimmedName } : prev
         )
 
         closeDialog()
@@ -271,6 +274,7 @@ export function useProjectActions({
       closeDialog()
 
       if (isDeletingActive) {
+        setActiveProject(null)
         router.push("/editor")
       } else {
         router.refresh()
