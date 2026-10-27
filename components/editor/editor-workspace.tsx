@@ -6,11 +6,13 @@ import { FolderKanban, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useProjectActions } from "@/hooks/use-project-actions"
 import { EMPTY_PROJECTS, type Project } from "@/types/project"
+import { AiSidebarPlaceholder } from "./ai-sidebar-placeholder"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { DeleteProjectDialog } from "./delete-project-dialog"
 import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { RenameProjectDialog } from "./rename-project-dialog"
+import { ShareDialog } from "./share-dialog"
 
 export interface EditorWorkspaceProps {
   initialOwnedProjects?: Project[]
@@ -24,6 +26,8 @@ export function EditorWorkspace({
   activeProject = null,
 }: EditorWorkspaceProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
+  const [isAiSidebarOpen, setIsAiSidebarOpen] = React.useState(true)
+  const [isShareOpen, setIsShareOpen] = React.useState(false)
 
   const {
     isCreateOpen,
@@ -62,12 +66,18 @@ export function EditorWorkspace({
     [handleOpenProject]
   )
 
+  const handleShare = React.useCallback(() => setIsShareOpen(true), [])
+
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-base text-copy-primary">
       <EditorNavbar
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
         title={currentActiveProject ? currentActiveProject.name : "Ghost AI"}
+        showActions={Boolean(currentActiveProject)}
+        onShare={handleShare}
+        onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
+        isAiSidebarOpen={isAiSidebarOpen}
       />
 
       <div className="relative flex flex-1 overflow-hidden">
@@ -84,21 +94,27 @@ export function EditorWorkspace({
           onDeleteProject={openDeleteDialog}
         />
 
-        {/* Center Canvas area: Editor Home or Active Project Workspace */}
-        <main className="relative flex flex-1 items-center justify-center bg-base p-6">
+        {/* Center Canvas area: fills remaining space with dark background */}
+        <main
+          data-slot="canvas-area"
+          className="relative flex flex-1 items-center justify-center overflow-hidden bg-base p-6 select-none"
+        >
           {currentActiveProject ? (
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand/20 bg-brand-dim text-brand">
+            <div
+              data-slot="canvas-placeholder"
+              className="flex flex-col items-center text-center"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-surface-border bg-surface text-brand shadow-sm">
                 <FolderKanban className="h-6 w-6" />
               </div>
-              <h1 className="mt-3 text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
+              <h1 className="mt-4 text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
                 {currentActiveProject.name}
               </h1>
               <p className="mt-1 font-mono text-xs text-copy-muted">
-                /{currentActiveProject.slug}
+                Room: {currentActiveProject.id}
               </p>
               <p className="mt-3 max-w-sm text-sm text-copy-muted">
-                Architecture workspace ready. Liveblocks &amp; React Flow canvas integration will follow in the next phase.
+                Architecture workspace canvas ready. Liveblocks &amp; React Flow canvas integration will follow in the next phase.
               </p>
             </div>
           ) : (
@@ -120,6 +136,14 @@ export function EditorWorkspace({
             </div>
           )}
         </main>
+
+        {/* Right sidebar placeholder for future AI chat */}
+        {currentActiveProject ? (
+          <AiSidebarPlaceholder
+            isOpen={isAiSidebarOpen}
+            onClose={() => setIsAiSidebarOpen(false)}
+          />
+        ) : null}
       </div>
 
       {/* Project Dialogs */}
@@ -154,6 +178,17 @@ export function EditorWorkspace({
         isLoading={isLoading}
         error={error}
       />
+
+      {currentActiveProject ? (
+        <ShareDialog
+          open={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          projectId={currentActiveProject.id}
+          projectName={currentActiveProject.name}
+          isOwner={currentActiveProject.isOwner}
+        />
+      ) : null}
     </div>
   )
 }
+
