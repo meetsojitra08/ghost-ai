@@ -4,15 +4,8 @@ import * as React from "react"
 import { Check, Copy, LoaderCircle, Mail, UserRound, UserRoundPlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useCollaborators } from "@/hooks/use-collaborators"
 import { EditorDialog } from "./editor-dialog"
-
-interface Collaborator {
-  id: string
-  email: string
-  name: string | null
-  imageUrl: string | null
-  createdAt: string
-}
 
 interface ShareDialogProps {
   open: boolean
@@ -30,38 +23,26 @@ export function ShareDialog({
   isOwner,
 }: ShareDialogProps) {
   const [email, setEmail] = React.useState("")
-  const [collaborators, setCollaborators] = React.useState<Collaborator[]>([])
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [removingEmail, setRemovingEmail] = React.useState<string | null>(null)
   const [copied, setCopied] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
   const copiedTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  const endpoint = `/api/projects/${encodeURIComponent(projectId)}/collaborators`
+  const {
+    collaborators,
+    isLoading,
+    isSubmitting,
+    removingEmail,
+    error,
+    inviteError,
+    setError,
+    clearInviteError,
+    inviteCollaborator,
+    removeCollaborator,
+    reset,
+  } = useCollaborators(projectId, open)
 
-  React.useEffect(() => {
-    if (!open) return
-    const controller = new AbortController()
-    setIsLoading(true)
-    setError(null)
-    fetch(endpoint, { signal: controller.signal })
-      .then(async (response) => {
-        const payload = (await response.json()) as {
-          collaborators?: Collaborator[]
-          error?: string
-        }
-        if (!response.ok) throw new Error(payload.error ?? "Could not load collaborators")
-        setCollaborators(payload.collaborators ?? [])
-      })
-      .catch((cause: unknown) => {
-        if (cause instanceof DOMException && cause.name === "AbortError") return
-        setError(cause instanceof Error ? cause.message : "Could not load collaborators")
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false)
-      })
-    return () => controller.abort()
-  }, [endpoint, open])
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) reset()
+    onOpenChange(nextOpen)
+  }
 
   React.useEffect(
     () => () => {
@@ -70,51 +51,11 @@ export function ShareDialog({
     []
   )
 
-  const inviteCollaborator = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleInviteCollaborator = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalizedEmail = email.trim().toLowerCase()
     if (!normalizedEmail || isSubmitting) return
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
-      })
-      const payload = (await response.json()) as {
-        collaborator?: Collaborator
-        error?: string
-      }
-      if (!response.ok) throw new Error(payload.error ?? "Could not invite collaborator")
-      if (payload.collaborator) {
-        setCollaborators((current) => [...current, payload.collaborator!])
-      }
-      setEmail("")
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not invite collaborator")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const removeCollaborator = async (collaborator: Collaborator) => {
-    setRemovingEmail(collaborator.email)
-    setError(null)
-    try {
-      const response = await fetch(endpoint, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: collaborator.email }),
-      })
-      const payload = (await response.json()) as { error?: string }
-      if (!response.ok) throw new Error(payload.error ?? "Could not remove collaborator")
-      setCollaborators((current) => current.filter((entry) => entry.id !== collaborator.id))
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not remove collaborator")
-    } finally {
-      setRemovingEmail(null)
-    }
+    if (await inviteCollaborator(normalizedEmail)) setEmail("")
   }
 
   const copyProjectLink = async () => {
@@ -131,7 +72,7 @@ export function ShareDialog({
   return (
     <EditorDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title="Share project"
       description={projectName}
       icon={
@@ -154,7 +95,7 @@ export function ShareDialog({
     >
       <div className="space-y-5">
         {isOwner ? (
-          <form onSubmit={inviteCollaborator} className="space-y-2.5">
+          <form onSubmit={handleInviteCollaborator} className="space-y-2.5">
             <label htmlFor="share-email" className="text-xs font-medium text-copy-secondary">
               Invite collaborators
             </label>
@@ -167,7 +108,10 @@ export function ShareDialog({
                   autoComplete="email"
                   placeholder="name@example.com"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value)
+                    clearInviteError()
+                  }}
                   maxLength={254}
                   required
                   className="h-10 rounded-xl border-surface-border bg-surface pl-9 text-copy-primary placeholder:text-copy-muted"
@@ -178,6 +122,11 @@ export function ShareDialog({
                 <span className="hidden sm:inline">Invite</span>
               </Button>
             </div>
+            {inviteError ? (
+              <p role="alert" className="text-sm text-state-error">
+                {inviteError}
+              </p>
+            ) : null}
           </form>
         ) : (
           <p className="rounded-xl border border-surface-border bg-surface px-3 py-2.5 text-xs text-copy-muted">
@@ -224,7 +173,7 @@ export function ShareDialog({
                       aria-label={`Remove ${collaborator.email}`}
                       title="Remove access"
                       disabled={removingEmail === collaborator.email}
-                      onClick={() => removeCollaborator(collaborator)}
+                      onClick={() => removeCollaborator(collaborator.email)}
                       className="shrink-0 text-copy-muted hover:bg-state-error/10 hover:text-state-error"
                     >
                       {removingEmail === collaborator.email ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}

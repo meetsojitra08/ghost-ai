@@ -57,6 +57,9 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Session Notes
 
 - Fixed collaborator invite race handling by mapping Prisma `P2002` to the existing 409 duplicate response, made the AI sidebar an overlay on narrow screens so the canvas retains workspace width, and prevented aborted share-list requests from clearing a newer request's loading state.
+- Removed synchronous loading-state updates from the share-dialog fetch effect by deriving loading from the current and completed endpoints. Fetch errors are endpoint-scoped and clear on a successful current request.
+- Extracted collaborator listing, invite/removal requests, and their loading, error, submitting, and removal state into `hooks/use-collaborators.ts`.
+- Split share invite failures into endpoint-scoped `inviteError` state, cleared on email edits and submissions while leaving shared operation errors untouched.
 
 - Completed implementation of `context/feature-specs/03-auth.md`. Verified with `npx tsc --noEmit`, `npm run lint`, `npm run build`, and endpoint curl tests.
 - Updated authentication layout to match the design screenshot: implemented a 50/50 two-panel layout with `bg-surface` (`#111114`) on the left to differentiate from `bg-base` (`#080809`), rounded cyan logo mark, exact headline and copy, 3 feature rows with Stroke Lucide icons (`History`, `Share2`, `FileText`), and applied Geist Sans typography guidelines across `html`, `body`, form controls, and Clerk themes.
