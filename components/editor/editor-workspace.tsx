@@ -12,6 +12,7 @@ import { DeleteProjectDialog } from "./delete-project-dialog"
 import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { RenameProjectDialog } from "./rename-project-dialog"
+import { ShareDialog } from "./share-dialog"
 
 export interface EditorWorkspaceProps {
   initialOwnedProjects?: Project[]
@@ -26,6 +27,7 @@ export function EditorWorkspace({
 }: EditorWorkspaceProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = React.useState(true)
+  const [isShareOpen, setIsShareOpen] = React.useState(false)
 
   const {
     isCreateOpen,
@@ -64,9 +66,7 @@ export function EditorWorkspace({
     [handleOpenProject]
   )
 
-  const handleShare = React.useCallback(() => {
-    // Share action placeholder (no real sharing logic yet per spec)
-  }, [])
+  const handleShare = React.useCallback(() => setIsShareOpen(true), [])
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-base text-copy-primary">
@@ -178,6 +178,16 @@ export function EditorWorkspace({
         isLoading={isLoading}
         error={error}
       />
+
+      {currentActiveProject ? (
+        <ShareDialog
+          open={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          projectId={currentActiveProject.id}
+          projectName={currentActiveProject.name}
+          isOwner={currentActiveProject.isOwner}
+        />
+      ) : null}
     </div>
   )
 }

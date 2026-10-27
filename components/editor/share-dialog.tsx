@@ -1,0 +1,245 @@
+"use client"
+
+import * as React from "react"
+import { Check, Copy, LoaderCircle, Mail, UserRound, UserRoundPlus, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { EditorDialog } from "./editor-dialog"
+
+interface Collaborator {
+  id: string
+  email: string
+  name: string | null
+  imageUrl: string | null
+  createdAt: string
+}
+
+interface ShareDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  projectId: string
+  projectName: string
+  isOwner: boolean
+}
+
+export function ShareDialog({
+  open,
+  onOpenChange,
+  projectId,
+  projectName,
+  isOwner,
+}: ShareDialogProps) {
+  const [email, setEmail] = React.useState("")
+  const [collaborators, setCollaborators] = React.useState<Collaborator[]>([])
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [removingEmail, setRemovingEmail] = React.useState<string | null>(null)
+  const [copied, setCopied] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const copiedTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const endpoint = `/api/projects/${encodeURIComponent(projectId)}/collaborators`
+
+  React.useEffect(() => {
+    if (!open) return
+    const controller = new AbortController()
+    setIsLoading(true)
+    setError(null)
+    fetch(endpoint, { signal: controller.signal })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          collaborators?: Collaborator[]
+          error?: string
+        }
+        if (!response.ok) throw new Error(payload.error ?? "Could not load collaborators")
+        setCollaborators(payload.collaborators ?? [])
+      })
+      .catch((cause: unknown) => {
+        if (cause instanceof DOMException && cause.name === "AbortError") return
+        setError(cause instanceof Error ? cause.message : "Could not load collaborators")
+      })
+      .finally(() => setIsLoading(false))
+    return () => controller.abort()
+  }, [endpoint, open])
+
+  React.useEffect(
+    () => () => {
+      if (copiedTimeout.current) clearTimeout(copiedTimeout.current)
+    },
+    []
+  )
+
+  const inviteCollaborator = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail || isSubmitting) return
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      })
+      const payload = (await response.json()) as {
+        collaborator?: Collaborator
+        error?: string
+      }
+      if (!response.ok) throw new Error(payload.error ?? "Could not invite collaborator")
+      if (payload.collaborator) {
+        setCollaborators((current) => [...current, payload.collaborator!])
+      }
+      setEmail("")
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not invite collaborator")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const removeCollaborator = async (collaborator: Collaborator) => {
+    setRemovingEmail(collaborator.email)
+    setError(null)
+    try {
+      const response = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: collaborator.email }),
+      })
+      const payload = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(payload.error ?? "Could not remove collaborator")
+      setCollaborators((current) => current.filter((entry) => entry.id !== collaborator.id))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not remove collaborator")
+    } finally {
+      setRemovingEmail(null)
+    }
+  }
+
+  const copyProjectLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/editor/${projectId}`)
+      setCopied(true)
+      if (copiedTimeout.current) clearTimeout(copiedTimeout.current)
+      copiedTimeout.current = setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setError("Could not copy the project link")
+    }
+  }
+
+  return (
+    <EditorDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Share project"
+      description={projectName}
+      icon={
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand/20 bg-accent-dim text-brand">
+          <UserRoundPlus className="h-5 w-5" />
+        </div>
+      }
+      className="sm:max-w-lg"
+      footer={
+        <Button
+          type="button"
+          variant="outline"
+          onClick={copyProjectLink}
+          className="gap-2 rounded-xl border-surface-border bg-surface text-copy-primary hover:bg-subtle sm:mr-auto"
+        >
+          {copied ? <Check className="h-4 w-4 text-state-success" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Copied!" : "Copy project link"}
+        </Button>
+      }
+    >
+      <div className="space-y-5">
+        {isOwner ? (
+          <form onSubmit={inviteCollaborator} className="space-y-2.5">
+            <label htmlFor="share-email" className="text-xs font-medium text-copy-secondary">
+              Invite collaborators
+            </label>
+            <div className="flex gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-copy-muted" />
+                <Input
+                  id="share-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  maxLength={254}
+                  required
+                  className="h-10 rounded-xl border-surface-border bg-surface pl-9 text-copy-primary placeholder:text-copy-muted"
+                />
+              </div>
+              <Button type="submit" disabled={isSubmitting || !email.trim()} className="h-10 gap-2 rounded-xl px-3">
+                {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <UserRoundPlus className="h-4 w-4" />}
+                <span className="hidden sm:inline">Invite</span>
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <p className="rounded-xl border border-surface-border bg-surface px-3 py-2.5 text-xs text-copy-muted">
+            You can view who has access to this project. Only the owner can manage access.
+          </p>
+        )}
+
+        <section aria-labelledby="collaborator-heading" className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h3 id="collaborator-heading" className="text-xs font-medium text-copy-secondary">
+              People with access
+            </h3>
+            {!isLoading ? <span className="text-xs text-copy-muted">{collaborators.length}</span> : null}
+          </div>
+          <div className="max-h-64 space-y-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-copy-muted">
+                <LoaderCircle className="h-4 w-4 animate-spin" /> Loading collaborators…
+              </div>
+            ) : collaborators.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-surface-border px-4 py-7 text-center text-sm text-copy-muted">
+                No collaborators have been invited yet.
+              </div>
+            ) : (
+              collaborators.map((collaborator) => (
+                <div key={collaborator.id} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-subtle/70">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-surface-border bg-subtle text-copy-muted">
+                    {collaborator.imageUrl ? (
+                      // Clerk avatar URLs are external and may vary per account.
+                      <img src={collaborator.imageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <UserRound className="h-4 w-4" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {collaborator.name ? <p className="truncate text-sm text-copy-primary">{collaborator.name}</p> : null}
+                    <p className="truncate text-xs text-copy-muted">{collaborator.email}</p>
+                  </div>
+                  {isOwner ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Remove ${collaborator.email}`}
+                      title="Remove access"
+                      disabled={removingEmail === collaborator.email}
+                      onClick={() => removeCollaborator(collaborator)}
+                      className="shrink-0 text-copy-muted hover:bg-state-error/10 hover:text-state-error"
+                    >
+                      {removingEmail === collaborator.email ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    </Button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        {error ? (
+          <p role="alert" className="rounded-xl border border-state-error/30 bg-state-error/10 px-3 py-2 text-sm text-state-error">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </EditorDialog>
+  )
+}

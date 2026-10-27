@@ -25,7 +25,7 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
   const access = await checkProjectAccess(
     roomId,
     identity.userId,
-    identity.email
+    identity.emails
   );
 
   if (!access.hasAccess || !access.project) {
