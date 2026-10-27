@@ -33,8 +33,8 @@ export function EditorNavbar({
   className,
   ...props
 }: EditorNavbarProps) {
-  const hasShareAction = showActions || typeof onShare === "function"
-  const hasAiAction = showActions || typeof onToggleAiSidebar === "function"
+  const hasShareAction = showActions && typeof onShare === "function"
+  const hasAiAction = showActions && typeof onToggleAiSidebar === "function"
 
   return (
     <header

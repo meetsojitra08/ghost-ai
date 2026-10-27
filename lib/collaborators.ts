@@ -24,6 +24,7 @@ export async function enrichCollaborators(
 
     for (const user of users.data) {
       for (const address of user.emailAddresses) {
+        if (address.verification?.status !== "verified") continue;
         profileByEmail.set(address.emailAddress.toLowerCase(), {
           name: user.fullName || user.username || null,
           imageUrl: user.imageUrl || null,
