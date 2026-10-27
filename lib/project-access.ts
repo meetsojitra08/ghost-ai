@@ -38,22 +38,20 @@ export async function getClerkIdentity(): Promise<ClerkIdentity | null> {
     };
   }
 
+  const verifiedAddresses = user.emailAddresses.filter(
+    (address) => address.verification?.status === "verified"
+  );
+  const verifiedEmails = verifiedAddresses.map((address) => address.emailAddress);
   const primaryEmail =
-    user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress ??
-    user.primaryEmailAddress?.emailAddress ??
-    user.emailAddresses[0]?.emailAddress ??
+    verifiedAddresses.find((address) => address.id === user.primaryEmailAddressId)
+      ?.emailAddress ??
+    verifiedEmails[0] ??
     null;
-
-  const verifiedEmails = user.emailAddresses
-    .filter((e) => !e.verification || e.verification.status === "verified")
-    .map((e) => e.emailAddress);
-
-  const allEmails = user.emailAddresses.map((e) => e.emailAddress);
 
   return {
     userId,
     email: primaryEmail,
-    emails: verifiedEmails.length > 0 ? verifiedEmails : allEmails,
+    emails: verifiedEmails,
   };
 }
 

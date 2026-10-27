@@ -14,20 +14,25 @@ export async function enrichCollaborators(
 ): Promise<CollaboratorProfile[]> {
   if (collaborators.length === 0) return [];
 
-  const client = await clerkClient();
-  const users = await client.users.getUserList({
-    emailAddress: collaborators.map((collaborator) => collaborator.email),
-    limit: 100,
-  });
-
   const profileByEmail = new Map<string, { name: string | null; imageUrl: string | null }>();
-  for (const user of users.data) {
-    for (const address of user.emailAddresses) {
-      profileByEmail.set(address.emailAddress.toLowerCase(), {
-        name: user.fullName || user.username || null,
-        imageUrl: user.imageUrl || null,
-      });
+  try {
+    const client = await clerkClient();
+    const users = await client.users.getUserList({
+      emailAddress: collaborators.map((collaborator) => collaborator.email),
+      limit: 100,
+    });
+
+    for (const user of users.data) {
+      for (const address of user.emailAddresses) {
+        profileByEmail.set(address.emailAddress.toLowerCase(), {
+          name: user.fullName || user.username || null,
+          imageUrl: user.imageUrl || null,
+        });
+      }
     }
+  } catch {
+    // Profile enrichment is best-effort; the collaborator email remains the fallback.
+    profileByEmail.clear();
   }
 
   return collaborators.map((collaborator) => {
