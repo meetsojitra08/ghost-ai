@@ -33,6 +33,11 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Allow API routes to reach route handlers directly so they enforce 401/403 JSON responses
+  if (req.nextUrl.pathname.startsWith("/api")) {
+    return;
+  }
+
   if (!isPublicRoute(req)) {
     await auth.protect();
   }

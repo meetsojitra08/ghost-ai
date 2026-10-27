@@ -6,6 +6,8 @@ export interface Project {
   updatedAt?: string
 }
 
+export const EMPTY_PROJECTS: Project[] = []
+
 export const INITIAL_MOCK_PROJECTS: Project[] = [
   {
     id: "proj-1",

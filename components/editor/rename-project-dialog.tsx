@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Globe, Loader2, Pencil, X } from "lucide-react"
+import { AlertCircle, Globe, Loader2, Pencil, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ export interface RenameProjectDialogProps {
   onChangeName: (name: string) => void
   onSubmit: (e?: React.FormEvent) => void
   isLoading?: boolean
+  error?: string | null
 }
 
 export function RenameProjectDialog({
@@ -27,6 +28,7 @@ export function RenameProjectDialog({
   onChangeName,
   onSubmit,
   isLoading = false,
+  error = null,
 }: RenameProjectDialogProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -141,6 +143,16 @@ export function RenameProjectDialog({
             ) : null}
           </div>
         </div>
+
+        {error ? (
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-xl border border-state-error/30 bg-state-error/10 px-3 py-2 text-xs text-state-error"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : null}
 
         {/* Live slug update */}
         <div className="rounded-2xl border border-surface-border-subtle bg-subtle/40 p-3.5 transition-all">

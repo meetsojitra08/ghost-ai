@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, Loader2, Trash2 } from "lucide-react"
+import { AlertCircle, AlertTriangle, Loader2, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { Project } from "@/types/project"
@@ -13,6 +13,7 @@ export interface DeleteProjectDialogProps {
   project: Project | null
   onConfirm: () => void
   isLoading?: boolean
+  error?: string | null
 }
 
 export function DeleteProjectDialog({
@@ -21,6 +22,7 @@ export function DeleteProjectDialog({
   project,
   onConfirm,
   isLoading = false,
+  error = null,
 }: DeleteProjectDialogProps) {
   return (
     <EditorDialog
@@ -76,13 +78,25 @@ export function DeleteProjectDialog({
         </div>
       }
     >
-      <div className="rounded-2xl border border-state-error/20 bg-state-error/5 p-3.5 text-xs">
-        <div className="flex items-start gap-2.5">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-state-error" />
-          <div className="leading-relaxed text-copy-secondary">
-            All architecture canvas graphs, generated specifications, and collaborator links associated with this project will be permanently removed.
+      <div className="space-y-3">
+        <div className="rounded-2xl border border-state-error/20 bg-state-error/5 p-3.5 text-xs">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-state-error" />
+            <div className="leading-relaxed text-copy-secondary">
+              All architecture canvas graphs, generated specifications, and collaborator links associated with this project will be permanently removed.
+            </div>
           </div>
         </div>
+
+        {error ? (
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-xl border border-state-error/30 bg-state-error/10 px-3 py-2 text-xs text-state-error"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : null}
       </div>
     </EditorDialog>
   )
