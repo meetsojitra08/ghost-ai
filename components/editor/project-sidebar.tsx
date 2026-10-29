@@ -54,10 +54,16 @@ export function ProjectSidebar({
         className={cn(
           "fixed left-3 top-16 bottom-3 z-40 flex w-80 max-w-[calc(100vw-1.5rem)] flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-md transition-all duration-300 ease-in-out",
           isOpen
-            ? "translate-x-0 opacity-100 pointer-events-auto"
-            : "-translate-x-[calc(100%+1.5rem)] opacity-0 pointer-events-none",
+            ? "translate-x-0 opacity-100 pointer-events-auto visible"
+            : "-translate-x-[calc(100%+4rem)] opacity-0 pointer-events-none invisible",
           className
         )}
+        style={{
+          transform: isOpen ? "translateX(0)" : "translateX(calc(-100% - 4rem))",
+          visibility: isOpen ? "visible" : "hidden",
+          transition: "transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms",
+          ...props.style,
+        }}
         {...props}
         inert={!isOpen}
       >
@@ -113,8 +119,8 @@ export function ProjectSidebar({
           >
             {ownedProjects.length === 0 ? (
               <>
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-subtle text-copy-muted">
-                  <Folder className="h-6 w-6 text-copy-muted" />
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-dim text-brand">
+                  <Folder className="h-6 w-6" />
                 </div>
                 <p className="text-sm font-medium text-copy-primary">No projects yet</p>
                 <p className="mt-1 text-xs text-copy-muted max-w-[210px]">
@@ -131,7 +137,7 @@ export function ProjectSidebar({
                       key={project.id}
                       className={cn(
                         "group flex items-center justify-between rounded-xl border border-transparent p-1 transition-colors hover:border-surface-border-subtle hover:bg-subtle/70",
-                        isActive && "bg-subtle/80 border-surface-border-subtle"
+                        isActive && "bg-subtle/80 border-surface-border-subtle border-l-2 border-l-brand"
                       )}
                     >
                       {/* Dedicated native Open button */}

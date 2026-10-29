@@ -45,8 +45,8 @@ export function EditorNavbar({
       )}
       {...props}
     >
-      {/* Left section: sidebar toggle button and optional title */}
-      <div className="flex items-center gap-3 min-w-0">
+      {/* Left section: sidebar toggle button, logo mark, and optional title */}
+      <div className="flex items-center gap-2 min-w-0">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -61,11 +61,17 @@ export function EditorNavbar({
             <PanelLeftOpen className="h-4 w-4" />
           )}
         </Button>
+        {/* Ghost AI logo mark */}
+        <div className="h-5 w-5 shrink-0 rounded-md bg-brand" aria-hidden="true" />
         {title ? (
           <div className="truncate text-sm font-semibold tracking-tight text-copy-primary">
             {title}
           </div>
-        ) : null}
+        ) : (
+          <span className="text-sm font-semibold tracking-tight text-copy-primary">
+            Ghost AI
+          </span>
+        )}
       </div>
 
       {/* Center section */}
