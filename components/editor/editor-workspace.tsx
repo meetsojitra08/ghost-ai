@@ -5,6 +5,7 @@ import { FolderKanban, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useProjectActions } from "@/hooks/use-project-actions"
+import { CanvasRoomWrapper } from "@/components/canvas"
 import { EMPTY_PROJECTS, type Project } from "@/types/project"
 import { AiSidebarPlaceholder } from "./ai-sidebar-placeholder"
 import { CreateProjectDialog } from "./create-project-dialog"
@@ -26,7 +27,7 @@ export function EditorWorkspace({
   activeProject = null,
 }: EditorWorkspaceProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
-  const [isAiSidebarOpen, setIsAiSidebarOpen] = React.useState(true)
+  const [isAiSidebarOpen, setIsAiSidebarOpen] = React.useState(false)
   const [isShareOpen, setIsShareOpen] = React.useState(false)
 
   const {
@@ -80,7 +81,7 @@ export function EditorWorkspace({
         isAiSidebarOpen={isAiSidebarOpen}
       />
 
-      <div className="relative flex flex-1 overflow-hidden">
+      <div className="relative flex-1 h-[calc(100vh-3.5rem)] w-full overflow-hidden">
         {/* Floating project sidebar */}
         <ProjectSidebar
           isOpen={isSidebarOpen}
@@ -94,50 +95,70 @@ export function EditorWorkspace({
           onDeleteProject={openDeleteDialog}
         />
 
-        {/* Center Canvas area: fills remaining space with dark background */}
+        {/* Center Canvas area: fills 100% of the viewport underneath both floating sidebars */}
         <main
           data-slot="canvas-area"
-          className="relative flex flex-1 items-center justify-center overflow-hidden bg-base p-6 select-none"
+          className="relative h-full w-full overflow-hidden bg-base"
+          style={{
+            background: "var(--bg-base)",
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
         >
           {currentActiveProject ? (
-            <div
-              data-slot="canvas-placeholder"
-              className="flex flex-col items-center text-center"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-surface-border bg-surface text-brand shadow-sm">
-                <FolderKanban className="h-6 w-6" />
-              </div>
-              <h1 className="mt-4 text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
-                {currentActiveProject.name}
-              </h1>
-              <p className="mt-1 font-mono text-xs text-copy-muted">
-                Room: {currentActiveProject.id}
-              </p>
-              <p className="mt-3 max-w-sm text-sm text-copy-muted">
-                Architecture workspace canvas ready. Liveblocks &amp; React Flow canvas integration will follow in the next phase.
-              </p>
-            </div>
+            <CanvasRoomWrapper
+              key={currentActiveProject.id}
+              roomId={currentActiveProject.id}
+            />
           ) : (
-            <div className="flex max-w-md flex-col items-center text-center">
-              <h1 className="text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
-                Create a project or open an existing one
-              </h1>
-              <p className="mt-2 text-sm text-copy-muted">
-                Start a new architecture workspace, or choose a project from the sidebar.
-              </p>
-              <Button
-                onClick={openCreateDialog}
-                className="mt-6 gap-2 rounded-xl font-medium"
-                size="default"
+            <div className="relative flex h-full w-full items-center justify-center select-none">
+              {/* Dot-grid canvas background filling the full viewport naturally */}
+              <svg
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full opacity-40"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <Plus className="h-4 w-4" />
-                New Project
-              </Button>
+                <defs>
+                  <pattern
+                    id="canvas-dot-grid"
+                    x="0"
+                    y="0"
+                    width="24"
+                    height="24"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <circle cx="1" cy="1" r="1" fill="var(--border-subtle, #3a3a42)" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#canvas-dot-grid)" />
+              </svg>
+
+              <div className="relative flex max-w-md flex-col items-center text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-surface-border bg-surface text-copy-muted shadow-sm">
+                  <FolderKanban className="h-7 w-7" />
+                </div>
+                <h1 className="mt-4 text-xl font-semibold tracking-tight text-copy-primary sm:text-2xl">
+                  Create a project or open an existing one
+                </h1>
+                <p className="mt-2 max-w-sm text-sm text-copy-muted">
+                  Start a new architecture workspace, or choose a project from the sidebar.
+                </p>
+                <Button
+                  onClick={openCreateDialog}
+                  className="mt-6 gap-2 rounded-xl font-medium"
+                  size="default"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              </div>
             </div>
           )}
         </main>
 
-        {/* Right sidebar placeholder for future AI chat */}
+        {/* Right floating sidebar for future AI chat */}
         {currentActiveProject ? (
           <AiSidebarPlaceholder
             isOpen={isAiSidebarOpen}

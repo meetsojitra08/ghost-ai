@@ -2,7 +2,6 @@ import * as React from "react";
 import { SignUp } from "@clerk/nextjs";
 import { AuthShell } from "@/components/auth";
 
-export const instant = false;
 
 export default function SignUpPage() {
   return (

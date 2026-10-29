@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { AlertCircle, Globe, Loader2, Pencil, X } from "lucide-react"
+import { AlertCircle, Loader2, Pencil, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { slugify } from "@/lib/slug"
 import type { Project } from "@/types/project"
 import { EditorDialog } from "./editor-dialog"
 
@@ -48,8 +47,6 @@ export function RenameProjectDialog({
       onSubmit(e)
     }
   }
-
-  const liveSlug = slugify(name)
 
   return (
     <EditorDialog
@@ -154,28 +151,9 @@ export function RenameProjectDialog({
           </div>
         ) : null}
 
-        {/* Live slug update */}
-        <div className="rounded-2xl border border-surface-border-subtle bg-subtle/40 p-3.5 transition-all">
-          <div className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 font-medium text-copy-muted">
-              <Globe className="h-3.5 w-3.5 text-brand" />
-              Updated Identifier
-            </span>
-          </div>
-
-          <div className="mt-2 flex items-center rounded-xl border border-surface-border-subtle bg-base/80 px-3 py-2 font-mono text-xs">
-            <span className="select-none text-copy-muted/70">ghost.ai/editor/</span>
-            <span className="truncate font-semibold text-brand">
-              {liveSlug ? (
-                liveSlug
-              ) : (
-                <span className="font-normal italic text-copy-faint">
-                  project-slug
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
+        <p className="text-[11px] text-copy-muted/70">
+          The workspace URL and room ID will not change — only the display name updates.
+        </p>
       </form>
     </EditorDialog>
   )

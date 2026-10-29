@@ -3,6 +3,7 @@ import { AccessDenied, EditorWorkspace } from "@/components/editor";
 import { checkProjectAccess, getClerkIdentity } from "@/lib/project-access";
 import { formatProjectForClient, getUserProjects } from "@/lib/projects";
 
+
 export const instant = false;
 
 interface EditorRoomPageProps {

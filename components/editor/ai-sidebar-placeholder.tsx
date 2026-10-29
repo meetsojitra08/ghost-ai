@@ -18,16 +18,26 @@ export function AiSidebarPlaceholder({
   className,
   ...props
 }: AiSidebarPlaceholderProps) {
-  if (!isOpen) return null
-
   return (
     <aside
       data-slot="ai-sidebar-placeholder"
+      aria-label="AI Assistant sidebar"
+      aria-hidden={!isOpen}
       className={cn(
-        "absolute inset-y-0 right-0 z-20 flex h-full w-[min(20rem,calc(100vw-4rem))] shrink-0 flex-col border-l border-surface-border-subtle bg-surface text-copy-primary animate-in slide-in-from-right duration-200 md:relative md:inset-auto md:w-88",
+        "fixed right-3 top-16 bottom-3 z-40 flex w-80 max-w-[calc(100vw-1.5rem)] sm:w-[22rem] flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-md transition-all duration-300 ease-in-out text-copy-primary",
+        isOpen
+          ? "translate-x-0 opacity-100 pointer-events-auto visible"
+          : "translate-x-[calc(100%+4rem)] opacity-0 pointer-events-none invisible",
         className
       )}
+      style={{
+        transform: isOpen ? "translateX(0)" : "translateX(calc(100% + 4rem))",
+        visibility: isOpen ? "visible" : "hidden",
+        transition: "transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms",
+        ...props.style,
+      }}
       {...props}
+      inert={!isOpen}
     >
       {/* Sidebar Header */}
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-surface-border-subtle px-4">
@@ -57,7 +67,7 @@ export function AiSidebarPlaceholder({
 
       {/* Main Placeholder Body */}
       <div className="flex flex-1 flex-col items-center justify-center p-6 text-center select-none">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-accent-ai/20 bg-accent-ai/10 text-accent-ai shadow-sm mb-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-accent-ai/20 bg-accent-ai/10 text-accent-ai shadow-sm shadow-accent-ai/10 mb-4">
           <Bot className="h-7 w-7" />
         </div>
         <h3 className="text-base font-semibold tracking-tight text-copy-primary">
@@ -66,6 +76,23 @@ export function AiSidebarPlaceholder({
         <p className="mt-2 max-w-[240px] text-xs leading-relaxed text-copy-muted">
           Describe your system in plain English. Ghost AI will generate nodes, edges, and architecture specs directly on your canvas.
         </p>
+
+        {/* Feature hint list */}
+        <div className="mt-6 w-full space-y-2 text-left">
+          {[
+            "Generate system designs from prompts",
+            "Add nodes and connections with AI",
+            "Export technical specs instantly",
+          ].map((hint) => (
+            <div
+              key={hint}
+              className="flex items-center gap-2.5 rounded-xl border border-surface-border-subtle bg-subtle/40 px-3 py-2"
+            >
+              <Sparkles className="h-3 w-3 shrink-0 text-accent-ai-text" />
+              <span className="text-xs text-copy-secondary">{hint}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Mock Chat Input Footer */}
@@ -78,8 +105,9 @@ export function AiSidebarPlaceholder({
             className="w-full resize-none bg-transparent text-xs text-copy-primary placeholder:text-copy-faint focus:outline-none disabled:cursor-not-allowed"
           />
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] text-copy-faint">
-              Coming in next phase
+            <span className="inline-flex items-center gap-1 rounded-md border border-accent-ai/20 bg-accent-ai/5 px-1.5 py-0.5 text-[10px] text-accent-ai-text">
+              <Sparkles className="h-2.5 w-2.5" />
+              Early Access
             </span>
             <Button
               disabled
