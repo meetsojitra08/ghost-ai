@@ -63,7 +63,10 @@ export interface CanvasNodeData extends Record<string, unknown> {
  * Shared canvas node and edge contracts for React Flow.
  */
 export type CanvasNode = Node<CanvasNodeData, CanvasNodeType>;
-export type CanvasEdge = Edge<Record<string, unknown>, CanvasEdgeType>;
+export interface CanvasEdgeData extends Record<string, unknown> {
+  label?: string;
+}
+export type CanvasEdge = Edge<CanvasEdgeData, CanvasEdgeType>;
 
 // Lowercase type aliases matching feature spec requirements
 export type canvasNode = CanvasNode;
@@ -88,6 +91,19 @@ export const DEFAULT_SHAPE_SIZES: Record<NodeShape, ShapeDimensions> = {
   pill: { width: 150, height: 60 },
   cylinder: { width: 120, height: 90 },
   hexagon: { width: 130, height: 90 },
+};
+
+/**
+ * Minimum dimensions enforced during node resizing to ensure labels and
+ * shape geometry remain legible and correctly proportioned.
+ */
+export const MIN_SHAPE_SIZES: Record<NodeShape, ShapeDimensions> = {
+  rectangle: { width: 80, height: 40 },
+  diamond: { width: 70, height: 70 },
+  circle: { width: 50, height: 50 },
+  pill: { width: 80, height: 36 },
+  cylinder: { width: 70, height: 50 },
+  hexagon: { width: 80, height: 50 },
 };
 
 /**

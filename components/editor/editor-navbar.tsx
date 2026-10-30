@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
+import { Boxes, PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ export interface EditorNavbarProps
   centerContent?: React.ReactNode
   rightContent?: React.ReactNode
   onShare?: () => void
+  onOpenTemplates?: () => void
   onToggleAiSidebar?: () => void
   isAiSidebarOpen?: boolean
   showActions?: boolean
@@ -27,6 +28,7 @@ export function EditorNavbar({
   centerContent,
   rightContent,
   onShare,
+  onOpenTemplates,
   onToggleAiSidebar,
   isAiSidebarOpen,
   showActions = false,
@@ -94,6 +96,20 @@ export function EditorNavbar({
           >
             <Share2 className="h-3.5 w-3.5 text-copy-muted" />
             <span className="hidden sm:inline">Share</span>
+          </Button>
+        ) : null}
+
+        {showActions && typeof onOpenTemplates === "function" ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenTemplates}
+            data-slot="starter-templates-button"
+            aria-label="Import starter template"
+            className="h-8 gap-1.5 rounded-xl border-surface-border bg-surface px-3 text-xs font-medium text-copy-primary hover:bg-subtle hover:text-copy-primary"
+          >
+            <Boxes className="h-3.5 w-3.5 text-copy-muted" />
+            <span className="hidden sm:inline">Templates</span>
           </Button>
         ) : null}
 

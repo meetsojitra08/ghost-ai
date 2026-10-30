@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { CanvasErrorBoundary } from "./canvas-error-boundary";
 import { CanvasLoading } from "./canvas-loading";
 import { EditorCanvas } from "./editor-canvas";
+import type { CanvasTemplateImportRequest } from "./editor-canvas";
 
 function ConnectionErrorFallback({
   error,
@@ -77,9 +78,15 @@ function RoomConnectionWatcher({ children }: { children: React.ReactNode }) {
 
 export interface CanvasRoomWrapperProps {
   roomId: string;
+  templateImport?: CanvasTemplateImportRequest | null;
+  onTemplateImported?: (requestId: number) => void;
 }
 
-export function CanvasRoomWrapper({ roomId }: CanvasRoomWrapperProps) {
+export function CanvasRoomWrapper({
+  roomId,
+  templateImport,
+  onTemplateImported,
+}: CanvasRoomWrapperProps) {
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
       <RoomProvider
@@ -92,7 +99,12 @@ export function CanvasRoomWrapper({ roomId }: CanvasRoomWrapperProps) {
         <CanvasErrorBoundary>
           <RoomConnectionWatcher>
             <ClientSideSuspense fallback={<CanvasLoading />}>
-              {() => <EditorCanvas />}
+              {() => (
+                <EditorCanvas
+                  templateImport={templateImport}
+                  onTemplateImported={onTemplateImported}
+                />
+              )}
             </ClientSideSuspense>
           </RoomConnectionWatcher>
         </CanvasErrorBoundary>

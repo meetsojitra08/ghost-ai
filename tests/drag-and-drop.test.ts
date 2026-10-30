@@ -5,7 +5,6 @@ import {
   createShapeDragPayload,
   parseShapeDragPayload,
   generateNodeId,
-  type NodeShape,
 } from "../types/canvas";
 
 console.log("Starting Drag and Drop pipeline verification...");
@@ -26,12 +25,12 @@ for (const shape of NODE_SHAPES) {
 console.log("✓ Shape definitions and default sizes verified");
 
 // Helper to create mock DragEvent
-function mockDragEvent(dataMap: Record<string, string>): any {
+function mockDragEvent(dataMap: Record<string, string>): Parameters<typeof parseShapeDragPayload>[0] {
   return {
     dataTransfer: {
       getData: (format: string) => dataMap[format] || "",
     },
-  };
+  } as unknown as Parameters<typeof parseShapeDragPayload>[0];
 }
 
 // 2. Verify parsing from standard application/reactflow string
