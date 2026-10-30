@@ -230,8 +230,6 @@ export function NodeShapeView({
         height: h,
         backgroundColor: bgStyle,
         color: textColor,
-        minWidth: 60,
-        minHeight: 36,
         ...style,
       }}
     >

@@ -36,9 +36,25 @@ Update this file whenever the current phase, active feature, or implementation s
 - `17-canvas-ergonomics.md.md`: Added a floating bottom-left canvas control bar for animated zoom out, fit view, and zoom in actions plus Liveblocks undo and redo. History buttons reflect `useCanUndo`/`useCanRedo` state and appear dimmed while unavailable. Added `hooks/use-keyboard-shortcuts.ts` for `+`/`=` zoom in, `-` zoom out, Cmd/Ctrl+Z undo, and Cmd/Ctrl+Shift+Z or Cmd/Ctrl+Y redo, ignoring shortcuts in inputs, textareas, selects, and editable text fields. Verified with `npm run build`.
 - `18-starter-templates.md`: Added three predefined canvas templates (microservices, CI/CD pipeline, and event-driven system), a scrollable template picker with fixed-size SVG diagram previews, and a navbar import action. Template imports remove the current room nodes and edges, add the selected snapshot through the existing Liveblocks change handlers, then fit the React Flow view. No template persistence or custom-template management added. Verified with `npm.cmd run build`.
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:6d6ff15faf48d8d43f7c6f086f44dc5b68aec4674eadefc1d1b091db609bf2dc -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:f355957074995735c87c0e2c3c7f68945bfaaf89e89b50cf2629c06a05cc4975 -->
+
 ## In Progress
 
 - None.
+
+## Recent Repairs
+
+- Fixed canvas control overlap on narrow screens and restored shortcuts from focused controls. Edge label edits now start with the current saved label, and CSS shapes respect the configured resize minimums. Verified with scoped ESLint, canvas shape tests, focused component interaction checks, and the required production build using a local placeholder database URL.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ## Next Up
 
