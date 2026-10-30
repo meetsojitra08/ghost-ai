@@ -14,6 +14,11 @@ import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { RenameProjectDialog } from "./rename-project-dialog"
 import { ShareDialog } from "./share-dialog"
+import {
+  StarterTemplatesModal,
+} from "./starter-templates-modal"
+import type { CanvasTemplate } from "./starter-templates"
+import type { CanvasTemplateImportRequest } from "@/components/canvas/editor-canvas"
 
 export interface EditorWorkspaceProps {
   initialOwnedProjects?: Project[]
@@ -29,6 +34,10 @@ export function EditorWorkspace({
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = React.useState(false)
   const [isShareOpen, setIsShareOpen] = React.useState(false)
+  const [isTemplatesOpen, setIsTemplatesOpen] = React.useState(false)
+  const [templateImport, setTemplateImport] =
+    React.useState<CanvasTemplateImportRequest | null>(null)
+  const templateImportId = React.useRef(0)
 
   const {
     isCreateOpen,
@@ -68,6 +77,15 @@ export function EditorWorkspace({
   )
 
   const handleShare = React.useCallback(() => setIsShareOpen(true), [])
+  const handleImportTemplate = React.useCallback((template: CanvasTemplate) => {
+    templateImportId.current += 1
+    setTemplateImport({ id: templateImportId.current, template })
+  }, [])
+  const handleTemplateImported = React.useCallback((requestId: number) => {
+    setTemplateImport((current) =>
+      current?.id === requestId ? null : current
+    )
+  }, [])
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-base text-copy-primary">
@@ -77,6 +95,7 @@ export function EditorWorkspace({
         title={currentActiveProject ? currentActiveProject.name : "Ghost AI"}
         showActions={Boolean(currentActiveProject)}
         onShare={handleShare}
+        onOpenTemplates={() => setIsTemplatesOpen(true)}
         onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
         isAiSidebarOpen={isAiSidebarOpen}
       />
@@ -111,6 +130,8 @@ export function EditorWorkspace({
             <CanvasRoomWrapper
               key={currentActiveProject.id}
               roomId={currentActiveProject.id}
+              templateImport={templateImport}
+              onTemplateImported={handleTemplateImported}
             />
           ) : (
             <div className="relative flex h-full w-full items-center justify-center select-none">
@@ -209,6 +230,12 @@ export function EditorWorkspace({
           isOwner={currentActiveProject.isOwner}
         />
       ) : null}
+
+      <StarterTemplatesModal
+        open={isTemplatesOpen}
+        onOpenChange={setIsTemplatesOpen}
+        onImport={handleImportTemplate}
+      />
     </div>
   )
 }

@@ -31,6 +31,8 @@ export const SHAPE_DEFINITIONS: readonly ShapeDefinition[] = [
 
 export interface ShapePanelProps {
   onAddShape?: (shape: NodeShape) => void;
+  onDragShapeStart?: (shape: NodeShape, event: React.DragEvent) => void;
+  onDragShapeEnd?: () => void;
   className?: string;
 }
 
@@ -38,7 +40,12 @@ export interface ShapePanelProps {
  * Floating pill-shaped toolbar at the bottom-center of the canvas.
  * Provides draggable icon buttons for all 6 supported canvas shapes.
  */
-export function ShapePanel({ onAddShape, className }: ShapePanelProps) {
+export function ShapePanel({
+  onAddShape,
+  onDragShapeStart,
+  onDragShapeEnd,
+  className,
+}: ShapePanelProps) {
   const isDraggingRef = React.useRef(false);
 
   const handleDragStart = React.useCallback(
@@ -55,16 +62,29 @@ export function ShapePanel({ onAddShape, className }: ShapePanelProps) {
       event.dataTransfer.setData("application/json", serialized);
       event.dataTransfer.setData("payload", serialized);
       event.dataTransfer.effectAllowed = "move";
+
+      // Hide default browser translucent snapshot in favor of custom ghost preview
+      try {
+        const img = new Image();
+        img.src =
+          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+        event.dataTransfer.setDragImage(img, 0, 0);
+      } catch {
+        // Safe fallback in headless or non-browser environments
+      }
+
+      onDragShapeStart?.(shape, event);
     },
-    []
+    [onDragShapeStart]
   );
 
   const handleDragEnd = React.useCallback(() => {
+    onDragShapeEnd?.();
     // Delay clearing drag state so click handlers don't fire immediately after drop
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 100);
-  }, []);
+  }, [onDragShapeEnd]);
 
   const handleClick = React.useCallback(
     (shape: NodeShape) => {
