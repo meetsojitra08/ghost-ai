@@ -42,12 +42,13 @@ export function CanvasEdgeRenderer({
   const isActive = selected || hovered;
 
   React.useEffect(() => {
-    if (!isEditing) setLabelDraft(label);
-  }, [isEditing, label]);
-
-  React.useEffect(() => {
     if (isEditing) inputRef.current?.focus();
   }, [isEditing]);
+
+  const startEditing = () => {
+    setLabelDraft(label);
+    setIsEditing(true);
+  };
 
   const saveLabel = React.useCallback(() => {
     context?.updateEdgeLabel(id, labelDraft.trim());
@@ -84,7 +85,7 @@ export function CanvasEdgeRenderer({
         onMouseLeave={() => setHovered(false)}
         onDoubleClick={(event) => {
           event.stopPropagation();
-          setIsEditing(true);
+          startEditing();
         }}
       />
       {(label || isActive || isEditing) && (
@@ -104,7 +105,7 @@ export function CanvasEdgeRenderer({
             onMouseLeave={() => setHovered(false)}
             onDoubleClick={(event) => {
               event.stopPropagation();
-              setIsEditing(true);
+              startEditing();
             }}
           >
             {isEditing ? (

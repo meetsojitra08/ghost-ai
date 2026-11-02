@@ -28,11 +28,10 @@ export function CanvasControls() {
       data-slot="canvas-controls"
       role="toolbar"
       aria-label="Canvas controls"
-      className="nodrag nopan nowheel absolute bottom-6 left-6 z-30 flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 px-2 py-1.5 shadow-2xl backdrop-blur-md select-none"
+      className="nodrag nopan nowheel absolute bottom-24 left-6 z-30 md:bottom-6 flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 px-2 py-1.5 shadow-2xl backdrop-blur-md select-none"
       onPointerDown={(event) => event.stopPropagation()}
       onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
     >
       <div role="group" aria-label="Zoom" className="flex items-center gap-0.5">
         <button
