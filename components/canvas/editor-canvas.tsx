@@ -11,7 +11,8 @@ import {
   ReactFlowProvider,
   useReactFlow,
 } from "@xyflow/react";
-import { Cursors, useLiveblocksFlow } from "@liveblocks/react-flow";
+import { useLiveblocksFlow } from "@liveblocks/react-flow";
+import { useUpdateMyPresence } from "@liveblocks/react/suspense";
 
 import "@xyflow/react/dist/style.css";
 import "@liveblocks/react-ui/styles.css";
@@ -35,6 +36,7 @@ import { ShapePanel } from "./shape-panel";
 import { ShapeDragPreview } from "./shape-drag-preview";
 import { CanvasEdgeRenderer } from "./canvas-edge";
 import { CanvasControls } from "./canvas-controls";
+import { CanvasPresence } from "./canvas-presence";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 
 export interface CanvasTemplateImportRequest {
@@ -78,6 +80,7 @@ function EditorCanvasInner({
     });
 
   const { screenToFlowPosition, fitView } = useReactFlow();
+  const updateMyPresence = useUpdateMyPresence();
   const lastImportedRequestId = React.useRef<number | null>(null);
 
   React.useEffect(() => {
@@ -229,6 +232,23 @@ function EditorCanvasInner({
     [screenToFlowPosition, onNodesChange]
   );
 
+  const handleCanvasMouseMove = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const bounds = event.currentTarget.getBoundingClientRect();
+      updateMyPresence({
+        cursor: {
+          x: event.clientX - bounds.left,
+          y: event.clientY - bounds.top,
+        },
+      });
+    },
+    [updateMyPresence]
+  );
+
+  const handleCanvasMouseLeave = React.useCallback(() => {
+    updateMyPresence({ cursor: null });
+  }, [updateMyPresence]);
+
   const handleAddShape = React.useCallback(
     (shape: NodeShape) => {
       const size = DEFAULT_SHAPE_SIZES[shape] || { width: 160, height: 80 };
@@ -354,6 +374,8 @@ function EditorCanvasInner({
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onDelete={onDelete}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseLeave={handleCanvasMouseLeave}
           onDragOver={onDragOver}
           onDrop={onDrop}
           connectionMode={ConnectionMode.Loose}
@@ -392,7 +414,7 @@ function EditorCanvasInner({
             zoomable
             ariaLabel="Canvas mini map"
           />
-          <Cursors />
+          <CanvasPresence />
         </ReactFlow>
 
         {/* Ghost preview during shape drag */}

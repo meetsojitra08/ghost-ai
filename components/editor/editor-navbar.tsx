@@ -19,6 +19,7 @@ export interface EditorNavbarProps
   onToggleAiSidebar?: () => void
   isAiSidebarOpen?: boolean
   showActions?: boolean
+  showUserButton?: boolean
 }
 
 export function EditorNavbar({
@@ -32,6 +33,7 @@ export function EditorNavbar({
   onToggleAiSidebar,
   isAiSidebarOpen,
   showActions = false,
+  showUserButton = true,
   className,
   ...props
 }: EditorNavbarProps) {
@@ -135,7 +137,7 @@ export function EditorNavbar({
           </Button>
         ) : null}
 
-        <UserButton />
+        {showUserButton ? <UserButton /> : null}
       </div>
     </header>
   )

@@ -98,6 +98,7 @@ export function EditorWorkspace({
         onOpenTemplates={() => setIsTemplatesOpen(true)}
         onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
         isAiSidebarOpen={isAiSidebarOpen}
+        showUserButton={!currentActiveProject}
       />
 
       <div className="relative flex-1 h-[calc(100vh-3.5rem)] w-full overflow-hidden">
