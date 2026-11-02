@@ -93,7 +93,7 @@ export function CanvasRoomWrapper({
         id={roomId}
         initialPresence={{
           cursor: null,
-          isThinking: false,
+          thinking: false,
         }}
       >
         <CanvasErrorBoundary>
