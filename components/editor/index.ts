@@ -6,5 +6,5 @@ export * from "./create-project-dialog"
 export * from "./rename-project-dialog"
 export * from "./delete-project-dialog"
 export * from "./access-denied"
-export * from "./ai-sidebar-placeholder"
+export * from "./ai-sidebar"
 

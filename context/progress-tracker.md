@@ -4,15 +4,16 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Phase 18: Starter Templates (Complete)
+- Phase 20: AI Sidebar Shell (Complete)
 
 ## Current Goal
 
-- Next feature spec: Canvas selection toolbar actions, edge creation controls, and canvas multi-selection.
+- Next feature spec: Not yet defined.
 
 ## Completed
 
 - `19-presence-avatars-cursors.md`: Added a canvas-only active participant group with current-user filtering from the Clerk session, display-only collaborator avatars (profile image or initials), a five-avatar overlap stack with `+N` overflow, conditional divider, and the Clerk `UserButton`. Kept the editor home navbar profile control unchanged and placed the active room's profile control with the canvas participants. Updated Liveblocks presence to `{ cursor, thinking }`, broadcast local coordinates from React Flow `onMouseMove`, clear on `onMouseLeave`, and render other users' colored pointer/name cursors while excluding the current Clerk user. Verified with `npm.cmd run build`.
+- `20-ai-sidebar-shell.md`: Replaced the placeholder sidebar with a dedicated `AiSidebar` component while keeping its parent-controlled visibility, floating placement, slide transition, border, and shadow. Added the AI Workspace header, AI Architect and Specs tabs, empty state with starter prompts, auto-resizing prompt input and keyboard submission, local UI-only message bubbles, and a static demo spec card with disabled download. Used existing project color tokens and added no backend or AI generation behavior. Verified with `npm.cmd run build`.
 - `01-design-system.md`: Configured shadcn/ui with dark theme tokens from `context/ui-context.md`, added UI primitives (Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea), installed `lucide-react`, set up `lib/utils.ts` with reusable `cn()` helper, configured CSS variables in `globals.css` with dark theme and `@theme inline` mappings, and verified compilation and TypeScript types.
 - `02-editor.md`: Implemented base chrome components that frame the editor screen: `components/editor/editor-navbar.tsx` (fixed-height top navbar with left, center, right sections, sidebar toggle with `PanelLeftOpen`/`PanelLeftClose` icons, and subtle bottom border) and `components/editor/project-sidebar.tsx` (floating overlay shell sliding from left without pushing page content, `Projects` header with close button, shadcn `Tabs` for "My Projects" and "Shared" with placeholder states, and full-width "New Project" button with `Plus` icon). Created `components/editor/editor-dialog.tsx` implementing the dialog pattern with dark tokens, supporting title, description, and footer actions. All components type-checked and lint-free.
 - `03-auth.md`: Installed `@clerk/ui` and configured Clerk authentication across the Next.js app. Created `lib/clerk-theme.ts` with `dark` theme from `@clerk/ui/themes` and appearance variable overrides mapped to the design system CSS variables in `globals.css` (no hardcoded colors). Wrapped `app/layout.tsx` in `ClerkProvider`. Implemented `proxy.ts` at project root protecting all routes by default except public auth paths matching `NEXT_PUBLIC_CLERK_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_SIGN_UP_URL`. Updated `/` (`app/page.tsx`) to redirect authenticated users to `/editor` and unauthenticated users to `/sign-in`. Built minimal responsive two-panel `AuthShell` (`components/auth/auth-shell.tsx`) with left branding/feature list and right centered form on large screens and form only on small screens. Created catch-all auth pages `app/sign-in/[[...sign-in]]/page.tsx` and `app/sign-up/[[...sign-up]]/page.tsx`. Added Clerk's `UserButton` to `components/editor/editor-navbar.tsx` right section. Created protected `/editor` workspace page (`app/editor/page.tsx`). Tested and verified with `tsc --noEmit`, ESLint, `npm run build`, and live HTTP route redirects (status 307 to `/sign-in` for protected paths, 200 for auth pages).
@@ -59,7 +60,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Canvas selection toolbar actions, edge creation controls, and canvas multi-selection.
+- Next feature spec not yet defined.
 
 ## Open Questions
 

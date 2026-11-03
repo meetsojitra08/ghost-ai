@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useProjectActions } from "@/hooks/use-project-actions"
 import { CanvasRoomWrapper } from "@/components/canvas"
 import { EMPTY_PROJECTS, type Project } from "@/types/project"
-import { AiSidebarPlaceholder } from "./ai-sidebar-placeholder"
+import { AiSidebar } from "./ai-sidebar"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { DeleteProjectDialog } from "./delete-project-dialog"
 import { EditorNavbar } from "./editor-navbar"
@@ -180,9 +180,9 @@ export function EditorWorkspace({
           )}
         </main>
 
-        {/* Right floating sidebar for future AI chat */}
+        {/* Right floating AI workspace sidebar */}
         {currentActiveProject ? (
-          <AiSidebarPlaceholder
+          <AiSidebar
             isOpen={isAiSidebarOpen}
             onClose={() => setIsAiSidebarOpen(false)}
           />
