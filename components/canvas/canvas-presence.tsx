@@ -3,12 +3,15 @@
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
+import { Bot } from "lucide-react";
 import {
   shallow,
+  useEventListener,
   useOthers,
   useOthersConnectionIds,
 } from "@liveblocks/react/suspense";
 import { useOther } from "@liveblocks/react/suspense";
+import { cn } from "@/lib/utils";
 
 interface Collaborator {
   connectionId: number;
@@ -16,6 +19,7 @@ interface Collaborator {
   name: string;
   avatar?: string;
   color: string;
+  thinking?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -27,15 +31,22 @@ function getInitials(name: string): string {
 }
 
 function CollaboratorAvatar({ collaborator }: { collaborator: Collaborator }) {
+  const isAi = collaborator.userId === "ghost-ai";
+
   return (
     <div
       role="img"
       aria-label={collaborator.name}
-      title={collaborator.name}
-      className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base bg-surface-elevated text-[10px] font-semibold text-copy-primary ring-1 ring-surface-border"
+      title={collaborator.name + (collaborator.thinking ? " (thinking...)" : "")}
+      className={cn(
+        "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base bg-surface-elevated text-[10px] font-semibold text-copy-primary ring-1 ring-surface-border",
+        collaborator.thinking && "ring-2 ring-ai shadow-sm shadow-ai/40"
+      )}
       style={{ color: collaborator.color }}
     >
-      {collaborator.avatar ? (
+      {isAi ? (
+        <Bot className="h-4 w-4 text-ai-text" />
+      ) : collaborator.avatar ? (
         // Profile image URLs are provided by Clerk metadata and may be external.
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -59,9 +70,10 @@ function ParticipantAvatars() {
         .map((other) => ({
           connectionId: other.connectionId,
           userId: other.id,
-          name: other.info.name,
-          avatar: other.info.avatar,
-          color: other.info.color,
+          name: other.info?.name || "Collaborator",
+          avatar: other.info?.avatar,
+          color: other.info?.color || "var(--accent-primary)",
+          thinking: Boolean(other.presence?.thinking),
         }))
         .filter((other) => other.userId !== userId),
     shallow
@@ -132,11 +144,12 @@ function ParticipantCursor({
   const { x, y } = other.presence.cursor;
   const name = other.info.name || "Collaborator";
   const color = other.info.color || "var(--accent-primary)";
+  const isThinking = Boolean(other.presence.thinking);
 
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute left-0 top-0 z-30"
+      className="pointer-events-none absolute left-0 top-0 z-30 transition-transform duration-100 ease-out"
       style={{ transform: `translate3d(${x}px, ${y}px, 0)` }}
     >
       <svg
@@ -153,11 +166,58 @@ function ParticipantCursor({
         />
       </svg>
       <span
-        className="ml-3 mt-0.5 block max-w-40 truncate rounded-md px-2 py-1 text-[10px] font-semibold leading-none text-white shadow-md"
+        className="ml-3 mt-0.5 inline-flex items-center gap-1.5 max-w-56 truncate rounded-md px-2 py-1 text-[10px] font-semibold leading-none text-white shadow-md"
         style={{ backgroundColor: color }}
       >
-        {name}
+        <span>{name}</span>
+        {isThinking ? (
+          <span className="inline-flex items-center gap-1 font-normal opacity-90">
+            <span>·</span>
+            <span className="animate-pulse">thinking...</span>
+          </span>
+        ) : null}
       </span>
+    </div>
+  );
+}
+
+function CanvasStatusFeed() {
+  const [status, setStatus] = React.useState<{
+    status: "start" | "processing" | "complete" | "error";
+    message: string;
+    timestamp: number;
+  } | null>(null);
+
+  useEventListener(({ event }) => {
+    if (event && event.type === "ai-status") {
+      setStatus(event);
+      if (event.status === "complete" || event.status === "error") {
+        setTimeout(() => {
+          setStatus((curr) => (curr?.timestamp === event.timestamp ? null : curr));
+        }, 6000);
+      }
+    }
+  });
+
+  if (!status) return null;
+
+  return (
+    <div
+      data-slot="canvas-ai-status-feed"
+      aria-live="polite"
+      className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 rounded-full border border-surface-border bg-surface/95 px-4 py-2 text-xs font-medium text-copy-primary shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-2"
+    >
+      {status.status === "processing" || status.status === "start" ? (
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ai opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-ai" />
+        </span>
+      ) : status.status === "error" ? (
+        <span className="h-2 w-2 rounded-full bg-state-error" />
+      ) : (
+        <span className="h-2 w-2 rounded-full bg-state-success" />
+      )}
+      <span className="max-w-md truncate">{status.message}</span>
     </div>
   );
 }
@@ -169,6 +229,7 @@ export function CanvasPresence() {
   return (
     <>
       <ParticipantAvatars />
+      <CanvasStatusFeed />
       <div
         data-slot="canvas-live-cursors"
         className="pointer-events-none absolute inset-0 z-30 overflow-hidden"

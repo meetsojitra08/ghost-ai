@@ -207,6 +207,8 @@ export function EditorWorkspace({
           <AiSidebar
             isOpen={isAiSidebarOpen}
             onClose={() => setIsAiSidebarOpen(false)}
+            roomId={currentActiveProject.id}
+            projectId={currentActiveProject.id}
           />
         ) : null}
       </div>
