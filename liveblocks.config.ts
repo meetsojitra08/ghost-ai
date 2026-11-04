@@ -1,3 +1,10 @@
+export type AiStatusEvent = {
+  type: "ai-status";
+  status: "start" | "processing" | "complete" | "error";
+  message: string;
+  timestamp: number;
+};
+
 // Define Liveblocks types for your application
 // https://liveblocks.io/docs/api-reference/liveblocks-react#Typing-your-data
 declare global {
@@ -25,7 +32,7 @@ declare global {
     };
 
     // Custom events, for useBroadcastEvent, useEventListener
-    RoomEvent: Record<string, never>;
+    RoomEvent: AiStatusEvent;
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.
     ThreadMetadata: Record<string, never>;

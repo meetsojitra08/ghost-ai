@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ArrowUp, Bot, Download, FileText, Sparkles, X } from "lucide-react"
+import { useRealtimeRun } from "@trigger.dev/react-hooks"
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,21 +19,79 @@ interface ChatMessage {
   id: number
   role: "user" | "assistant"
   content: string
+  isGenerating?: boolean
+}
+
+interface ActiveRun {
+  messageId: number
+  runId: string
+  token?: string
+}
+
+function AiRunSubscriber({
+  runId,
+  token,
+  onUpdate,
+  onComplete,
+}: {
+  runId: string
+  token?: string
+  onUpdate: (statusText: string) => void
+  onComplete: (summary?: string, error?: string) => void
+}) {
+  const { run, error } = useRealtimeRun(runId, {
+    accessToken: token,
+    enabled: Boolean(token),
+  })
+
+  React.useEffect(() => {
+    if (error) {
+      onComplete(undefined, error.message)
+      return
+    }
+    if (!run) return
+
+    const message = (run.metadata?.message as string) || undefined
+    if (message) {
+      onUpdate(message)
+    }
+
+    if (run.status === "COMPLETED") {
+      const output = run.output as
+        | { summary?: string; error?: string }
+        | undefined
+      onComplete(
+        output?.summary || message || "System architecture generated successfully.",
+        output?.error
+      )
+    } else if (run.status === "FAILED" || run.status === "CRASHED") {
+      const errorMsg =
+        (run.metadata?.message as string) || "Design agent task failed to complete"
+      onComplete(undefined, errorMsg)
+    }
+  }, [run, error, onUpdate, onComplete])
+
+  return null
 }
 
 export interface AiSidebarProps extends React.HTMLAttributes<HTMLElement> {
   isOpen: boolean
   onClose?: () => void
+  roomId?: string
+  projectId?: string
 }
 
 export function AiSidebar({
   isOpen,
   onClose,
+  roomId,
+  projectId,
   className,
   ...props
 }: AiSidebarProps) {
   const [prompt, setPrompt] = React.useState("")
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
+  const [activeRun, setActiveRun] = React.useState<ActiveRun | null>(null)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const messageId = React.useRef(0)
 
@@ -44,30 +103,137 @@ export function AiSidebar({
     textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 72), 160)}px`
   }, [prompt])
 
-  const submitPrompt = React.useCallback(() => {
+  const submitPrompt = React.useCallback(async () => {
     const content = prompt.trim()
     if (!content) return
 
     const userMessageId = ++messageId.current
     const assistantMessageId = ++messageId.current
+
+    setPrompt("")
+
+    if (!roomId || !projectId) {
+      setMessages((current) => [
+        ...current,
+        { id: userMessageId, role: "user", content },
+        {
+          id: assistantMessageId,
+          role: "assistant",
+          content: "Please select or open an active project to generate designs.",
+        },
+      ])
+      return
+    }
+
     setMessages((current) => [
       ...current,
       { id: userMessageId, role: "user", content },
       {
         id: assistantMessageId,
         role: "assistant",
-        content: "AI responses will appear here once generation is connected.",
+        content: "Ghost AI is analyzing your system architecture request...",
+        isGenerating: true,
       },
     ])
-    setPrompt("")
-  }, [prompt])
+
+    try {
+      const res = await fetch("/api/ai/design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: content,
+          roomId,
+          projectId,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setMessages((current) =>
+          current.map((m) =>
+            m.id === assistantMessageId
+              ? {
+                  ...m,
+                  content: `Error: ${data.error || "Failed to trigger AI design"}`,
+                  isGenerating: false,
+                }
+              : m
+          )
+        )
+        return
+      }
+
+      const runId = data.runId as string
+
+      // Retrieve run-scoped public token for realtime updates
+      const tokenRes = await fetch("/api/ai/design/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      })
+
+      const tokenData = await tokenRes.json()
+      const token = tokenData.token as string | undefined
+
+      setActiveRun({
+        messageId: assistantMessageId,
+        runId,
+        token,
+      })
+    } catch (err) {
+      setMessages((current) =>
+        current.map((m) =>
+          m.id === assistantMessageId
+            ? {
+                ...m,
+                content: `Error: ${err instanceof Error ? err.message : "Failed to connect to design service"}`,
+                isGenerating: false,
+              }
+            : m
+        )
+      )
+    }
+  }, [projectId, prompt, roomId])
+
+  const handleRunUpdate = React.useCallback(
+    (statusText: string) => {
+      if (!activeRun) return
+      setMessages((current) =>
+        current.map((m) =>
+          m.id === activeRun.messageId
+            ? { ...m, content: statusText, isGenerating: true }
+            : m
+        )
+      )
+    },
+    [activeRun]
+  )
+
+  const handleRunComplete = React.useCallback(
+    (summary?: string, error?: string) => {
+      if (!activeRun) return
+      setMessages((current) =>
+        current.map((m) =>
+          m.id === activeRun.messageId
+            ? {
+                ...m,
+                content: error ? `Error: ${error}` : (summary || "System architecture updated."),
+                isGenerating: false,
+              }
+            : m
+        )
+      )
+      setActiveRun(null)
+    },
+    [activeRun]
+  )
 
   const handlePromptKeyDown = (
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
-      submitPrompt()
+      void submitPrompt()
     }
   }
 
@@ -93,6 +259,15 @@ export function AiSidebar({
       {...props}
       inert={!isOpen}
     >
+      {activeRun?.token ? (
+        <AiRunSubscriber
+          runId={activeRun.runId}
+          token={activeRun.token}
+          onUpdate={handleRunUpdate}
+          onComplete={handleRunComplete}
+        />
+      ) : null}
+
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-surface-border-subtle px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ai/20 bg-ai/10 text-ai-text">
@@ -180,7 +355,8 @@ export function AiSidebar({
                     "max-w-[88%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed",
                     message.role === "user"
                       ? "ml-auto rounded-br-md border-2 border-brand/50 bg-brand-dim text-copy-primary"
-                      : "mr-auto rounded-bl-md border border-surface-border bg-elevated text-ai-text"
+                      : "mr-auto rounded-bl-md border border-surface-border bg-elevated text-ai-text",
+                    message.isGenerating && "animate-pulse"
                   )}
                 >
                   {message.content}
@@ -193,7 +369,7 @@ export function AiSidebar({
             className="shrink-0 border-t border-surface-border-subtle bg-surface/50 p-3"
             onSubmit={(event) => {
               event.preventDefault()
-              submitPrompt()
+              void submitPrompt()
             }}
           >
             <div className="rounded-xl border border-surface-border bg-base/60 p-2 shadow-inner focus-within:border-brand/50">
