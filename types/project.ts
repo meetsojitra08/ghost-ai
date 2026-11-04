@@ -4,6 +4,7 @@ export interface Project {
   slug: string
   isOwner: boolean
   updatedAt?: string
+  canvasJsonPath?: string | null
 }
 
 export const EMPTY_PROJECTS: Project[] = []

@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Phase 20: AI Sidebar Shell (Complete)
+- Phase 21: Canvas Autosave & Persistence (Complete)
 
 ## Current Goal
 
@@ -12,6 +12,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
+- `21-canvas-autosave.md`: Installed `@vercel/blob` and implemented autosave and state persistence for the collaborative canvas. Configured storage architecture where Prisma stores project metadata and the canvas snapshot blob URL (`canvasJsonPath`), while Vercel Blob stores the canvas JSON at `canvas/{projectId}.json`. Created authenticated API routes `PUT /api/projects/[projectId]/canvas` (saving canvas snapshot to Vercel Blob and recording the returned URL on the Prisma project record) and `GET /api/projects/[projectId]/canvas` (reading the blob URL and returning saved canvas state). Added `useCanvasAutosave` hook in `hooks/use-canvas-autosave.ts` (with aliases `hooks/use-autosave.ts`, `hook/use-canvas-autosave.ts`, `hook/use-autosave.ts`) supporting debounced writes, change detection, manual `saveNow` trigger, and save status tracking (`saved`, `saving`, `error`). Configured editor loading in `EditorCanvas` to check on mount if the Liveblocks room has existing nodes or edges, skipping loading entirely if active collaboration is present, or fetching and restoring the saved snapshot if the room is empty. Added an interactive Save button with visual status indicator to `EditorNavbar`. Verified with automated unit tests (`tests/canvas-autosave.test.ts`), `npx tsc --noEmit`, `npm run lint`, and `npm run build`.
 - `19-presence-avatars-cursors.md`: Added a canvas-only active participant group with current-user filtering from the Clerk session, display-only collaborator avatars (profile image or initials), a five-avatar overlap stack with `+N` overflow, conditional divider, and the Clerk `UserButton`. Kept the editor home navbar profile control unchanged and placed the active room's profile control with the canvas participants. Updated Liveblocks presence to `{ cursor, thinking }`, broadcast local coordinates from React Flow `onMouseMove`, clear on `onMouseLeave`, and render other users' colored pointer/name cursors while excluding the current Clerk user. Verified with `npm.cmd run build`.
 - `20-ai-sidebar-shell.md`: Replaced the placeholder sidebar with a dedicated `AiSidebar` component while keeping its parent-controlled visibility, floating placement, slide transition, border, and shadow. Added the AI Workspace header, AI Architect and Specs tabs, empty state with starter prompts, auto-resizing prompt input and keyboard submission, local UI-only message bubbles, and a static demo spec card with disabled download. Used existing project color tokens and added no backend or AI generation behavior. Verified with `npm.cmd run build`.
 - `01-design-system.md`: Configured shadcn/ui with dark theme tokens from `context/ui-context.md`, added UI primitives (Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea), installed `lucide-react`, set up `lib/utils.ts` with reusable `cn()` helper, configured CSS variables in `globals.css` with dark theme and `@theme inline` mappings, and verified compilation and TypeScript types.

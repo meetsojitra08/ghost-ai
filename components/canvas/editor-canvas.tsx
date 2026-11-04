@@ -31,6 +31,7 @@ import {
   type NodeColorDefinition,
   type NodeShape,
 } from "@/types/canvas";
+import { useCanvasAutosave, type CanvasSaveStatus } from "@/hooks/use-canvas-autosave";
 import { CanvasNodeRenderer } from "./canvas-node";
 import { ShapePanel } from "./shape-panel";
 import { ShapeDragPreview } from "./shape-drag-preview";
@@ -62,11 +63,18 @@ export const CanvasNodeContext =
   React.createContext<CanvasNodeContextValue | null>(null);
 
 function EditorCanvasInner({
+  projectId,
   templateImport,
   onTemplateImported,
+  onSaveStatusChange,
 }: {
+  projectId: string;
   templateImport?: CanvasTemplateImportRequest | null;
   onTemplateImported?: (requestId: number) => void;
+  onSaveStatusChange?: (
+    status: CanvasSaveStatus,
+    saveNow: () => Promise<void>
+  ) => void;
 }) {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
@@ -82,6 +90,88 @@ function EditorCanvasInner({
   const { screenToFlowPosition, fitView } = useReactFlow();
   const updateMyPresence = useUpdateMyPresence();
   const lastImportedRequestId = React.useRef<number | null>(null);
+
+  // Autosave hook watching canvas nodes and edges
+  const { status, saveNow, markAsSaved } = useCanvasAutosave(
+    projectId,
+    nodes,
+    edges
+  );
+
+  // Notify parent component of save status and manual save trigger
+  React.useEffect(() => {
+    onSaveStatusChange?.(status, saveNow);
+  }, [onSaveStatusChange, saveNow, status]);
+
+  // Load saved canvas state on editor load
+  const hasCheckedInitialLoadRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!projectId) return;
+    if (hasCheckedInitialLoadRef.current) return;
+    hasCheckedInitialLoadRef.current = true;
+
+    // 1. If the room already has nodes or edges, skip the load entirely to avoid overwriting active collaboration
+    if (nodes.length > 0 || edges.length > 0) {
+      markAsSaved(nodes, edges);
+      return;
+    }
+
+    // 2. If the room is empty, fetch and load the saved canvas state if available
+    let isCancelled = false;
+
+    async function loadSavedState() {
+      try {
+        const response = await fetch(
+          `/api/projects/${encodeURIComponent(projectId)}/canvas`
+        );
+        if (!response.ok) return;
+
+        const data = await response.json().catch(() => ({}));
+        if (isCancelled) return;
+
+        const savedNodes: CanvasNode[] = data.canvas?.nodes ?? data.nodes ?? [];
+        const savedEdges: CanvasEdge[] = data.canvas?.edges ?? data.edges ?? [];
+
+        if (savedNodes.length === 0 && savedEdges.length === 0) {
+          markAsSaved([], []);
+          return;
+        }
+
+        // Double check room is still empty before applying
+        if (nodes.length > 0 || edges.length > 0) {
+          return;
+        }
+
+        if (savedNodes.length > 0) {
+          onNodesChange(
+            savedNodes.map((node) => ({ type: "add", item: node }))
+          );
+        }
+        if (savedEdges.length > 0) {
+          onEdgesChange(
+            savedEdges.map((edge) => ({ type: "add", item: edge }))
+          );
+        }
+
+        markAsSaved(savedNodes, savedEdges);
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            void fitView({ padding: 0.2, duration: 350 });
+          });
+        });
+      } catch (error) {
+        console.error("Failed to load saved canvas state:", error);
+      }
+    }
+
+    void loadSavedState();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [edges, fitView, markAsSaved, nodes, onEdgesChange, onNodesChange, projectId]);
 
   React.useEffect(() => {
     if (!templateImport) return;
@@ -435,17 +525,26 @@ function EditorCanvasInner({
 }
 
 export function EditorCanvas({
+  projectId,
   templateImport,
   onTemplateImported,
+  onSaveStatusChange,
 }: {
+  projectId: string;
   templateImport?: CanvasTemplateImportRequest | null;
   onTemplateImported?: (requestId: number) => void;
+  onSaveStatusChange?: (
+    status: CanvasSaveStatus,
+    saveNow: () => Promise<void>
+  ) => void;
 }) {
   return (
     <ReactFlowProvider>
       <EditorCanvasInner
+        projectId={projectId}
         templateImport={templateImport}
         onTemplateImported={onTemplateImported}
+        onSaveStatusChange={onSaveStatusChange}
       />
     </ReactFlowProvider>
   );

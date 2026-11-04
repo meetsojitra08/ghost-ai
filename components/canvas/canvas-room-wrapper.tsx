@@ -13,6 +13,7 @@ import { CanvasErrorBoundary } from "./canvas-error-boundary";
 import { CanvasLoading } from "./canvas-loading";
 import { EditorCanvas } from "./editor-canvas";
 import type { CanvasTemplateImportRequest } from "./editor-canvas";
+import type { CanvasSaveStatus } from "@/hooks/use-canvas-autosave";
 
 function ConnectionErrorFallback({
   error,
@@ -78,14 +79,21 @@ function RoomConnectionWatcher({ children }: { children: React.ReactNode }) {
 
 export interface CanvasRoomWrapperProps {
   roomId: string;
+  projectId?: string;
   templateImport?: CanvasTemplateImportRequest | null;
   onTemplateImported?: (requestId: number) => void;
+  onSaveStatusChange?: (
+    status: CanvasSaveStatus,
+    saveNow: () => Promise<void>
+  ) => void;
 }
 
 export function CanvasRoomWrapper({
   roomId,
+  projectId,
   templateImport,
   onTemplateImported,
+  onSaveStatusChange,
 }: CanvasRoomWrapperProps) {
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
@@ -101,8 +109,10 @@ export function CanvasRoomWrapper({
             <ClientSideSuspense fallback={<CanvasLoading />}>
               {() => (
                 <EditorCanvas
+                  projectId={projectId || roomId}
                   templateImport={templateImport}
                   onTemplateImported={onTemplateImported}
+                  onSaveStatusChange={onSaveStatusChange}
                 />
               )}
             </ClientSideSuspense>

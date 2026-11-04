@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Boxes, PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
+import { Boxes, Loader2, PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { CanvasSaveStatus } from "@/hooks/use-canvas-autosave"
 
 export interface EditorNavbarProps
   extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
@@ -20,6 +21,8 @@ export interface EditorNavbarProps
   isAiSidebarOpen?: boolean
   showActions?: boolean
   showUserButton?: boolean
+  saveStatus?: CanvasSaveStatus
+  onSave?: () => void
 }
 
 export function EditorNavbar({
@@ -34,11 +37,14 @@ export function EditorNavbar({
   isAiSidebarOpen,
   showActions = false,
   showUserButton = true,
+  saveStatus,
+  onSave,
   className,
   ...props
 }: EditorNavbarProps) {
   const hasShareAction = showActions && typeof onShare === "function"
   const hasAiAction = showActions && typeof onToggleAiSidebar === "function"
+  const hasSaveAction = showActions && (typeof onSave === "function" || Boolean(saveStatus))
 
   return (
     <header
@@ -83,9 +89,52 @@ export function EditorNavbar({
         {centerContent ?? null}
       </div>
 
-      {/* Right section: navbar actions (share, AI toggle) and user profile */}
+      {/* Right section: navbar actions (save status, share, templates, AI toggle) and user profile */}
       <div className="flex items-center justify-end gap-2 sm:gap-3">
         {rightContent ?? null}
+
+        {hasSaveAction ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSave}
+            disabled={saveStatus === "saving"}
+            data-slot="save-button"
+            aria-label={`Save canvas (${saveStatus || "saved"})`}
+            title={
+              saveStatus === "saving"
+                ? "Saving changes..."
+                : saveStatus === "error"
+                ? "Failed to save. Click to retry."
+                : "All changes saved. Click to save now."
+            }
+            className="h-8 gap-1.5 rounded-xl border-surface-border bg-surface px-2.5 sm:px-3 text-xs font-medium text-copy-primary hover:bg-subtle hover:text-copy-primary"
+          >
+            {/* Save status indicator */}
+            {saveStatus === "saving" ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />
+                <span className="hidden sm:inline">Saving...</span>
+              </>
+            ) : saveStatus === "error" ? (
+              <>
+                <span
+                  className="h-2 w-2 rounded-full bg-state-error shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="hidden sm:inline text-state-error">Error</span>
+              </>
+            ) : (
+              <>
+                <span
+                  className="h-2 w-2 rounded-full bg-state-success shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="hidden sm:inline">Saved</span>
+              </>
+            )}
+          </Button>
+        ) : null}
 
         {hasShareAction ? (
           <Button
@@ -142,4 +191,3 @@ export function EditorNavbar({
     </header>
   )
 }
-

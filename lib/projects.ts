@@ -68,6 +68,7 @@ export function formatProjectForClient(
     slug: project.id,
     isOwner: project.ownerId === currentUserId,
     updatedAt: formatRelativeTime(project.updatedAt),
+    canvasJsonPath: project.canvasJsonPath,
   };
 }
 
