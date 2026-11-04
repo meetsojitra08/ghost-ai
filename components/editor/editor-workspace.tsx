@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useProjectActions } from "@/hooks/use-project-actions"
 import { CanvasRoomWrapper } from "@/components/canvas"
 import { EMPTY_PROJECTS, type Project } from "@/types/project"
+import type { CanvasSaveStatus } from "@/hooks/use-canvas-autosave"
 import { AiSidebar } from "./ai-sidebar"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { DeleteProjectDialog } from "./delete-project-dialog"
@@ -38,6 +39,23 @@ export function EditorWorkspace({
   const [templateImport, setTemplateImport] =
     React.useState<CanvasTemplateImportRequest | null>(null)
   const templateImportId = React.useRef(0)
+
+  const [saveStatus, setSaveStatus] = React.useState<CanvasSaveStatus>("saved")
+  const saveNowRef = React.useRef<(() => Promise<void>) | null>(null)
+
+  const handleSaveStatusChange = React.useCallback(
+    (status: CanvasSaveStatus, saveNow: () => Promise<void>) => {
+      setSaveStatus(status)
+      saveNowRef.current = saveNow
+    },
+    []
+  )
+
+  const handleManualSave = React.useCallback(() => {
+    if (saveNowRef.current) {
+      void saveNowRef.current()
+    }
+  }, [])
 
   const {
     isCreateOpen,
@@ -94,6 +112,8 @@ export function EditorWorkspace({
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
         title={currentActiveProject ? currentActiveProject.name : "Ghost AI"}
         showActions={Boolean(currentActiveProject)}
+        saveStatus={currentActiveProject ? saveStatus : undefined}
+        onSave={currentActiveProject ? handleManualSave : undefined}
         onShare={handleShare}
         onOpenTemplates={() => setIsTemplatesOpen(true)}
         onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
@@ -131,8 +151,10 @@ export function EditorWorkspace({
             <CanvasRoomWrapper
               key={currentActiveProject.id}
               roomId={currentActiveProject.id}
+              projectId={currentActiveProject.id}
               templateImport={templateImport}
               onTemplateImported={handleTemplateImported}
+              onSaveStatusChange={handleSaveStatusChange}
             />
           ) : (
             <div className="relative flex h-full w-full items-center justify-center select-none">
@@ -240,4 +262,3 @@ export function EditorWorkspace({
     </div>
   )
 }
-
