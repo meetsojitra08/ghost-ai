@@ -86,6 +86,7 @@ export interface CanvasRoomWrapperProps {
     status: CanvasSaveStatus,
     saveNow: () => Promise<void>
   ) => void;
+  children?: React.ReactNode;
 }
 
 export function CanvasRoomWrapper({
@@ -94,6 +95,7 @@ export function CanvasRoomWrapper({
   templateImport,
   onTemplateImported,
   onSaveStatusChange,
+  children,
 }: CanvasRoomWrapperProps) {
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
@@ -118,6 +120,7 @@ export function CanvasRoomWrapper({
             </ClientSideSuspense>
           </RoomConnectionWatcher>
         </CanvasErrorBoundary>
+        {children}
       </RoomProvider>
     </LiveblocksProvider>
   );

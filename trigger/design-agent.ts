@@ -6,6 +6,7 @@ import { LiveObject, LiveMap, type LsonObject } from "@liveblocks/node";
 import { MarkerType } from "@xyflow/react";
 
 import { liveblocks } from "@/lib/liveblocks";
+import { AI_STATUS_FEED_ID } from "@/types/tasks";
 import {
   CANVAS_NODE_TYPE,
   CANVAS_EDGE_TYPE,
@@ -190,6 +191,37 @@ export async function publishAiStatus(
     });
   } catch (error) {
     logger.warn("Failed to broadcast AI status event", { error });
+  }
+
+  try {
+    await liveblocks.createFeedMessage({
+      roomId,
+      feedId: AI_STATUS_FEED_ID,
+      data: {
+        status,
+        text: message,
+        message,
+        type: "design",
+        timestamp: Date.now(),
+      },
+    });
+  } catch {
+    try {
+      await liveblocks.createFeed({ roomId, feedId: AI_STATUS_FEED_ID });
+      await liveblocks.createFeedMessage({
+        roomId,
+        feedId: AI_STATUS_FEED_ID,
+        data: {
+          status,
+          text: message,
+          message,
+          type: "design",
+          timestamp: Date.now(),
+        },
+      });
+    } catch (feedError) {
+      logger.warn("Failed to create feed message in ai-status-feed", { feedError });
+    }
   }
 }
 
