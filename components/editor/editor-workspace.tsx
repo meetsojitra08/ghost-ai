@@ -155,7 +155,15 @@ export function EditorWorkspace({
               templateImport={templateImport}
               onTemplateImported={handleTemplateImported}
               onSaveStatusChange={handleSaveStatusChange}
-            />
+            >
+              {/* Right floating AI workspace sidebar */}
+              <AiSidebar
+                isOpen={isAiSidebarOpen}
+                onClose={() => setIsAiSidebarOpen(false)}
+                roomId={currentActiveProject.id}
+                projectId={currentActiveProject.id}
+              />
+            </CanvasRoomWrapper>
           ) : (
             <div className="relative flex h-full w-full items-center justify-center select-none">
               {/* Dot-grid canvas background filling the full viewport naturally */}
@@ -201,16 +209,6 @@ export function EditorWorkspace({
             </div>
           )}
         </main>
-
-        {/* Right floating AI workspace sidebar */}
-        {currentActiveProject ? (
-          <AiSidebar
-            isOpen={isAiSidebarOpen}
-            onClose={() => setIsAiSidebarOpen(false)}
-            roomId={currentActiveProject.id}
-            projectId={currentActiveProject.id}
-          />
-        ) : null}
       </div>
 
       {/* Project Dialogs */}

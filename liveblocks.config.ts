@@ -1,3 +1,5 @@
+import type { ChatMessagePayload, TaskFeedPayload } from "@/types/tasks";
+
 export type AiStatusEvent = {
   type: "ai-status";
   status: "start" | "processing" | "complete" | "error";
@@ -33,6 +35,14 @@ declare global {
 
     // Custom events, for useBroadcastEvent, useEventListener
     RoomEvent: AiStatusEvent;
+
+    // Custom metadata set on feeds, for useFeeds, useCreateFeed, etc.
+    FeedMetadata: {
+      name?: string;
+    };
+
+    // Custom payload set on feed messages, for useFeedMessages, useCreateFeedMessage, etc.
+    FeedMessageData: TaskFeedPayload | ChatMessagePayload | Record<string, unknown>;
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.
     ThreadMetadata: Record<string, never>;

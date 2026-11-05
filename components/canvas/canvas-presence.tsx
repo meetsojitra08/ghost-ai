@@ -3,15 +3,17 @@
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
-import { Bot } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import {
   shallow,
   useEventListener,
+  useFeedMessages,
   useOthers,
   useOthersConnectionIds,
 } from "@liveblocks/react/suspense";
 import { useOther } from "@liveblocks/react/suspense";
 import { cn } from "@/lib/utils";
+import { AI_STATUS_FEED_ID, validateTaskFeedMessage } from "@/types/tasks";
 
 interface Collaborator {
   connectionId: number;
@@ -166,38 +168,87 @@ function ParticipantCursor({
         />
       </svg>
       <span
+        data-slot="cursor-name-badge"
         className="ml-3 mt-0.5 inline-flex items-center gap-1.5 max-w-56 truncate rounded-md px-2 py-1 text-[10px] font-semibold leading-none text-white shadow-md"
         style={{ backgroundColor: color }}
       >
         <span>{name}</span>
         {isThinking ? (
-          <span className="inline-flex items-center gap-1 font-normal opacity-90">
-            <span>·</span>
-            <span className="animate-pulse">thinking...</span>
-          </span>
+          <Loader2
+            data-slot="cursor-thinking-spinner"
+            className="h-2.5 w-2.5 shrink-0 animate-spin"
+            aria-label="Thinking"
+          />
         ) : null}
       </span>
     </div>
   );
 }
 
+function getLatestFeedStatus(
+  messages: Array<{ data: unknown; createdAt: number }> | undefined
+) {
+  if (!messages || messages.length === 0) return null;
+  const sorted = [...messages].sort((a, b) => b.createdAt - a.createdAt);
+  for (const msg of sorted) {
+    const validated = validateTaskFeedMessage(msg.data);
+    if (validated && (validated.text || validated.message)) {
+      return {
+        status:
+          (validated.status as "start" | "processing" | "complete" | "error") ||
+          "processing",
+        message: validated.text || validated.message || "",
+        timestamp: validated.timestamp || msg.createdAt,
+      };
+    }
+  }
+  return null;
+}
+
 function CanvasStatusFeed() {
-  const [status, setStatus] = React.useState<{
+  const [broadcastStatus, setBroadcastStatus] = React.useState<{
     status: "start" | "processing" | "complete" | "error";
     message: string;
     timestamp: number;
   } | null>(null);
 
+  // Subscribe to shared ai-status-feed
+  const { messages } = useFeedMessages(AI_STATUS_FEED_ID);
+  const feedStatus = getLatestFeedStatus(messages);
+
   useEventListener(({ event }) => {
     if (event && event.type === "ai-status") {
-      setStatus(event);
-      if (event.status === "complete" || event.status === "error") {
+      const validated = validateTaskFeedMessage(event);
+      const text = validated?.text || validated?.message || event.message;
+      const stat =
+        (validated?.status as "start" | "processing" | "complete" | "error") ||
+        event.status;
+      const ts = validated?.timestamp || event.timestamp;
+
+      setBroadcastStatus({
+        status: stat,
+        message: text,
+        timestamp: ts,
+      });
+
+      if (stat === "complete" || stat === "error") {
         setTimeout(() => {
-          setStatus((curr) => (curr?.timestamp === event.timestamp ? null : curr));
+          setBroadcastStatus((curr) => (curr?.timestamp === ts ? null : curr));
         }, 6000);
       }
     }
   });
+
+  const status =
+    !feedStatus && !broadcastStatus
+      ? null
+      : !feedStatus
+      ? broadcastStatus
+      : !broadcastStatus
+      ? feedStatus
+      : feedStatus.timestamp >= broadcastStatus.timestamp
+      ? feedStatus
+      : broadcastStatus;
 
   if (!status) return null;
 
