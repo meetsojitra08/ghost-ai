@@ -1,6 +1,25 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+/**
+ * Normalizes PostgreSQL connection URLs to prevent pg-connection-string security warnings.
+ * In upcoming pg versions, 'require', 'prefer', and 'verify-ca' change semantics from verify-full.
+ * Using 'verify-full' explicitly preserves current behavior and eliminates warnings.
+ */
+function normalizeDatabaseUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    const sslMode = parsed.searchParams.get("sslmode");
+    if (sslMode === "require" || sslMode === "prefer" || sslMode === "verify-ca") {
+      parsed.searchParams.set("sslmode", "verify-full");
+      return parsed.toString();
+    }
+  } catch {
+    return rawUrl.replace(/sslmode=(require|prefer|verify-ca)/, "sslmode=verify-full");
+  }
+  return rawUrl;
+}
+
 function createPrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -14,8 +33,10 @@ function createPrismaClient(): PrismaClient {
     });
   }
 
+  const normalizedUrl = normalizeDatabaseUrl(databaseUrl);
+
   const adapter = new PrismaPg({
-    connectionString: databaseUrl,
+    connectionString: normalizedUrl,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10_000,
     idleTimeoutMillis: 20_000,

@@ -7,11 +7,11 @@ import { Bot, Loader2 } from "lucide-react";
 import {
   shallow,
   useEventListener,
-  useFeedMessages,
   useOthers,
   useOthersConnectionIds,
 } from "@liveblocks/react/suspense";
 import { useOther } from "@liveblocks/react/suspense";
+import { useFeedMessages } from "@liveblocks/react";
 import { cn } from "@/lib/utils";
 import { AI_STATUS_FEED_ID, validateTaskFeedMessage } from "@/types/tasks";
 
@@ -212,9 +212,9 @@ function CanvasStatusFeed() {
     timestamp: number;
   } | null>(null);
 
-  // Subscribe to shared ai-status-feed
-  const { messages } = useFeedMessages(AI_STATUS_FEED_ID);
-  const feedStatus = getLatestFeedStatus(messages);
+  // Subscribe to shared ai-status-feed (using non-suspense hook to avoid crashing canvas on timeout)
+  const { messages, error } = useFeedMessages(AI_STATUS_FEED_ID);
+  const feedStatus = error ? null : getLatestFeedStatus(messages);
 
   useEventListener(({ event }) => {
     if (event && event.type === "ai-status") {
@@ -273,6 +273,29 @@ function CanvasStatusFeed() {
   );
 }
 
+class SafeStatusFeedBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn("CanvasStatusFeed caught error:", error);
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
 export function CanvasPresence() {
   const { userId } = useAuth();
   const connectionIds = useOthersConnectionIds();
@@ -280,7 +303,9 @@ export function CanvasPresence() {
   return (
     <>
       <ParticipantAvatars />
-      <CanvasStatusFeed />
+      <SafeStatusFeedBoundary>
+        <CanvasStatusFeed />
+      </SafeStatusFeedBoundary>
       <div
         data-slot="canvas-live-cursors"
         className="pointer-events-none absolute inset-0 z-30 overflow-hidden"

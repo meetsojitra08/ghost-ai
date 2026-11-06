@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AlertCircle, ArrowUp, Bot, Download, FileText, Loader2, Sparkles, X } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
+import { useRealtimeRun } from "@trigger.dev/react-hooks"
 import {
   useCreateFeed,
   useCreateFeedMessage,
@@ -77,16 +78,24 @@ function getLatestStatusMessage(
 function AiSidebarConnected({
   isOpen,
   onClose,
+  roomId,
+  projectId,
   className,
   style,
   ...props
 }: AiSidebarProps) {
   const { user } = useUser()
   const self = useSelf()
+  const room = useRoom()
 
   const [prompt, setPrompt] = React.useState("")
   const [isSending, setIsSending] = React.useState(false)
   const [sendError, setSendError] = React.useState<string | null>(null)
+  const [activeRun, setActiveRun] = React.useState<{
+    runId: string
+    publicToken: string
+  } | null>(null)
+  const completedRunRef = React.useRef<string | null>(null)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const chatScrollRef = React.useRef<HTMLDivElement>(null)
 
@@ -125,6 +134,97 @@ function AiSidebarConnected({
     }
   })
 
+  // 5. Track run in real time via useRealtimeRun
+  const { run, error: realtimeError } = useRealtimeRun(activeRun?.runId, {
+    accessToken: activeRun?.publicToken,
+    enabled: Boolean(activeRun?.runId && activeRun?.publicToken),
+  })
+
+  // Handle run completion or error from useRealtimeRun
+  React.useEffect(() => {
+    if (!activeRun) return
+
+    if (realtimeError) {
+      if (completedRunRef.current !== activeRun.runId) {
+        completedRunRef.current = activeRun.runId
+        const errorMsg =
+          realtimeError.message || "Failed to track AI design task execution."
+        createFeedMessage(AI_CHAT_FEED_ID, {
+          sender: {
+            id: "ghost-ai",
+            name: "Ghost AI",
+            color: "#6457f9",
+          },
+          role: "assistant",
+          content: `Error: ${errorMsg}`,
+          timestamp: Date.now(),
+        }).catch(() => {})
+        setActiveRun(null)
+        setIsSending(false)
+      }
+      return
+    }
+
+    if (!run) return
+
+    if (run.status === "COMPLETED" || run.finishedAt) {
+      if (completedRunRef.current !== activeRun.runId) {
+        completedRunRef.current = activeRun.runId
+        const output = run.output as
+          | { summary?: string; error?: string }
+          | undefined
+        const finalMessage =
+          output?.summary ||
+          (run.metadata?.message as string) ||
+          "System architecture generated successfully."
+
+        createFeedMessage(AI_CHAT_FEED_ID, {
+          sender: {
+            id: "ghost-ai",
+            name: "Ghost AI",
+            color: "#6457f9",
+          },
+          role: "assistant",
+          content: finalMessage,
+          timestamp: Date.now(),
+        }).catch(() => {})
+
+        setActiveRun(null)
+        setIsSending(false)
+      }
+    } else if (
+      run.status === "FAILED" ||
+      run.status === "CRASHED" ||
+      run.status === "CANCELED" ||
+      run.status === "SYSTEM_FAILURE"
+    ) {
+      if (completedRunRef.current !== activeRun.runId) {
+        completedRunRef.current = activeRun.runId
+        const output = run.output as
+          | { summary?: string; error?: string }
+          | undefined
+        const errorMsg =
+          output?.error ||
+          (run.metadata?.message as string) ||
+          `AI generation failed with status: ${run.status}`
+
+        createFeedMessage(AI_CHAT_FEED_ID, {
+          sender: {
+            id: "ghost-ai",
+            name: "Ghost AI",
+            color: "#6457f9",
+          },
+          role: "assistant",
+          content: `Error: ${errorMsg}`,
+          timestamp: Date.now(),
+        }).catch(() => {})
+
+        setActiveRun(null)
+        setIsSending(false)
+      }
+    }
+  }, [run, realtimeError, activeRun, createFeedMessage])
+
   const isAnyoneThinking = useOthers((others) =>
     others.some((other) => Boolean(other.presence?.thinking))
   )
@@ -132,13 +232,16 @@ function AiSidebarConnected({
   const isFeedActive =
     isTaskStatusActive(latestFeedStatus?.status) ||
     isTaskStatusActive(broadcastStatus?.status)
-  const isAiWorking = Boolean(isAnyoneThinking || isFeedActive)
+
+  const isLocalRunActive = Boolean(isSending || activeRun)
+  const isRunActive = Boolean(isLocalRunActive || isFeedActive || isAnyoneThinking)
 
   const latestStatusText =
     latestFeedStatus?.text ||
     latestFeedStatus?.message ||
     broadcastStatus?.text ||
     broadcastStatus?.message ||
+    (run?.metadata?.message as string) ||
     (isAnyoneThinking ? "Ghost AI is thinking..." : "AI generation in progress...")
 
   // Auto-scroll chat to bottom when messages update
@@ -157,13 +260,19 @@ function AiSidebarConnected({
     textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 72), 160)}px`
   }, [prompt])
 
-  // Send message to ai-chat feed
+  // Submit message: push to ai-chat, call /api/ai/design, track run
   const submitMessage = async () => {
     const content = prompt.trim()
-    if (!content || isSending || isAiWorking) return
+    if (!content || isRunActive) return
+
+    const targetRoomId = roomId || room?.id
+    if (!targetRoomId) {
+      return
+    }
 
     setSendError(null)
     setIsSending(true)
+    setPrompt("")
 
     const senderName =
       user?.fullName ||
@@ -171,11 +280,11 @@ function AiSidebarConnected({
       self?.info?.name ||
       "Collaborator"
 
-    const payload: ChatMessagePayload = {
+    const userPayload: ChatMessagePayload = {
       sender: {
         id: user?.id || self?.id || "anonymous",
         name: senderName,
-        color: self?.info?.color || "var(--accent-primary)",
+        color: self?.info?.color || "#62C073",
         avatar: user?.imageUrl || self?.info?.avatar,
       },
       role: "user",
@@ -183,20 +292,94 @@ function AiSidebarConnected({
       timestamp: Date.now(),
     }
 
+    // 1. Push user message to ai-chat feed
     try {
-      await createFeedMessage(AI_CHAT_FEED_ID, payload)
-      setPrompt("")
+      await createFeedMessage(AI_CHAT_FEED_ID, userPayload)
     } catch {
       try {
         await createFeed(AI_CHAT_FEED_ID, { metadata: { name: "AI Chat" } })
-        await createFeedMessage(AI_CHAT_FEED_ID, payload)
-        setPrompt("")
-      } catch (err) {
-        setSendError(
-          err instanceof Error ? err.message : "Failed to send message"
-        )
+        await createFeedMessage(AI_CHAT_FEED_ID, userPayload)
+      } catch (feedErr) {
+        console.warn("Failed to push user message to feed:", feedErr)
       }
-    } finally {
+    }
+
+    // 2. Call POST /api/ai/design with { prompt, roomId }
+    try {
+      const res = await fetch("/api/ai/design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: content,
+          roomId: targetRoomId,
+          projectId: projectId || targetRoomId,
+        }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        const errorMsg =
+          data.error || `Failed to start design generation (${res.status})`
+        await createFeedMessage(AI_CHAT_FEED_ID, {
+          sender: {
+            id: "ghost-ai",
+            name: "Ghost AI",
+            color: "#6457f9",
+          },
+          role: "assistant",
+          content: `Error: ${errorMsg}`,
+          timestamp: Date.now(),
+        }).catch(() => {})
+        setIsSending(false)
+        return
+      }
+
+      // 3. Read { runId, publicToken } from response
+      const returnedRunId = data.runId as string
+      let returnedPublicToken = (data.publicToken ||
+        data.token ||
+        data.publicAccessToken) as string | undefined
+
+      if (!returnedPublicToken && returnedRunId) {
+        const tokenRes = await fetch("/api/ai/design/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ runId: returnedRunId }),
+        })
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json().catch(() => ({}))
+          returnedPublicToken = tokenData.token || tokenData.publicAccessToken
+        }
+      }
+
+      // 4. Store runId and publicToken in local state
+      if (returnedRunId && returnedPublicToken) {
+        completedRunRef.current = null
+        setActiveRun({
+          runId: returnedRunId,
+          publicToken: returnedPublicToken,
+        })
+      } else {
+        setIsSending(false)
+      }
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to connect to AI design service"
+      try {
+        await createFeedMessage(AI_CHAT_FEED_ID, {
+          sender: {
+            id: "ghost-ai",
+            name: "Ghost AI",
+            color: "#6457f9",
+          },
+          role: "assistant",
+          content: `Error: ${errorMsg}`,
+          timestamp: Date.now(),
+        })
+      } catch {
+        // ignore feed message error
+      }
       setIsSending(false)
     }
   }
@@ -206,7 +389,9 @@ function AiSidebarConnected({
   ) => {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
-      void submitMessage()
+      if (!isRunActive && prompt.trim()) {
+        void submitMessage()
+      }
     }
   }
 
@@ -242,12 +427,12 @@ function AiSidebarConnected({
               <h2 className="text-sm font-semibold tracking-tight text-copy-primary">
                 AI Workspace
               </h2>
-              {isAiWorking ? (
+              {isRunActive ? (
                 <span
                   data-slot="ai-active-badge"
-                  className="inline-flex items-center gap-1 rounded-full bg-ai/10 px-2 py-0.5 text-[10px] font-medium text-ai-text ring-1 ring-ai/20"
+                  className="inline-flex items-center gap-1 rounded-full bg-[#62C073]/10 px-2 py-0.5 text-[10px] font-medium text-[#62C073] ring-1 ring-[#62C073]/20"
                 >
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ai" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#62C073]" />
                   Thinking
                 </span>
               ) : null}
@@ -315,11 +500,11 @@ function AiSidebarConnected({
                     <button
                       key={starterPrompt}
                       type="button"
-                      disabled={isAiWorking || isSending}
-                      onClick={() => !isAiWorking && !isSending && setPrompt(starterPrompt)}
+                      disabled={isRunActive}
+                      onClick={() => !isRunActive && setPrompt(starterPrompt)}
                       className={cn(
-                        "rounded-full border border-surface-border bg-subtle px-3 py-2 text-left text-xs text-ai-text transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                        (isAiWorking || isSending) && "opacity-50 cursor-not-allowed"
+                        "rounded-full border border-surface-border bg-subtle px-3 py-2 text-left text-xs text-ai-text transition-colors hover:border-[#62C073]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62C073]",
+                        isRunActive && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       {starterPrompt}
@@ -350,7 +535,7 @@ function AiSidebarConnected({
                     <div className="flex items-center gap-1.5 px-1 text-[10px] text-copy-muted">
                       <span
                         className="font-medium truncate max-w-32"
-                        style={{ color: senderInfo.color }}
+                        style={{ color: isCurrentUser ? "#62C073" : senderInfo.color }}
                       >
                         {isCurrentUser ? "You" : senderInfo.name}
                       </span>
@@ -362,9 +547,9 @@ function AiSidebarConnected({
                       className={cn(
                         "whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-sm",
                         isCurrentUser
-                          ? "rounded-br-md border border-brand/40 bg-brand-dim text-copy-primary"
+                          ? "rounded-br-md bg-[#62C073] text-[#080809] font-medium"
                           : isAssistant
-                          ? "rounded-bl-md border border-ai/20 bg-ai/10 text-ai-text"
+                          ? "rounded-bl-md border border-surface-border bg-surface text-copy-primary"
                           : "rounded-bl-md border border-surface-border bg-elevated text-copy-primary"
                       )}
                     >
@@ -398,15 +583,19 @@ function AiSidebarConnected({
             </div>
           ) : null}
 
-          {/* AI activity status indicator from ai-status-feed */}
-          {isAiWorking ? (
+          {/* Status strip above input - compact bar only shown when a run is active */}
+          {isRunActive ? (
             <div
-              data-slot="ai-thinking-indicator"
+              data-slot="ai-status-strip"
               role="status"
               aria-live="polite"
-              className="flex items-center gap-2 border-t border-surface-border-subtle bg-surface/90 px-4 py-2 text-xs text-ai-text backdrop-blur-sm animate-in fade-in"
+              className="flex items-center gap-2 border-t border-surface-border-subtle bg-base px-3.5 py-1.5 text-xs text-[#62C073] backdrop-blur-sm animate-in fade-in"
             >
-              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-ai" aria-hidden="true" />
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#62C073] opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#62C073]" />
+              </span>
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[#62C073]" aria-hidden="true" />
               <span className="truncate font-medium">{latestStatusText}</span>
             </div>
           ) : null}
@@ -418,7 +607,7 @@ function AiSidebarConnected({
               void submitMessage()
             }}
           >
-            <div className="rounded-xl border border-surface-border bg-base/60 p-2 shadow-inner focus-within:border-brand/50">
+            <div className="rounded-xl border border-surface-border bg-base/60 p-2 shadow-inner focus-within:border-[#62C073]/50">
               <Textarea
                 ref={textareaRef}
                 value={prompt}
@@ -428,18 +617,16 @@ function AiSidebarConnected({
                 }}
                 onKeyDown={handlePromptKeyDown}
                 rows={2}
-                disabled={isAiWorking || isSending}
-                aria-label="Message room chat"
+                disabled={isRunActive}
+                aria-label="Message Ghost AI"
                 placeholder={
-                  isAiWorking
+                  isRunActive
                     ? "AI generation is in progress..."
-                    : isSending
-                    ? "Sending message..."
-                    : "Message collaborators in this room..."
+                    : "Ask Ghost AI to design an architecture..."
                 }
                 className={cn(
                   "min-h-[72px] max-h-40 resize-none overflow-y-auto border-0 bg-transparent px-1.5 py-1 text-xs text-copy-primary shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-xs",
-                  (isAiWorking || isSending) && "opacity-60 cursor-not-allowed"
+                  isRunActive && "opacity-60 cursor-not-allowed"
                 )}
               />
               <div className="flex items-center justify-between pt-1">
@@ -449,12 +636,17 @@ function AiSidebarConnected({
                 <Button
                   type="submit"
                   size="icon-sm"
-                  aria-label="Send message"
-                  disabled={!prompt.trim() || isAiWorking || isSending}
-                  className="h-7 w-7 rounded-lg bg-brand text-base hover:bg-brand/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-label={isRunActive ? "AI generation in progress" : "Send message"}
+                  disabled={!prompt.trim() || isRunActive}
+                  className={cn(
+                    "h-7 w-7 rounded-lg transition-colors",
+                    !prompt.trim() || isRunActive
+                      ? "bg-subtle text-copy-muted opacity-50 cursor-not-allowed"
+                      : "bg-[#62C073] text-[#080809] hover:bg-[#62C073]/90"
+                  )}
                 >
-                  {isAiWorking || isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-base" aria-hidden="true" />
+                  {isRunActive ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#62C073]" aria-hidden="true" />
                   ) : (
                     <ArrowUp className="h-4 w-4" />
                   )}
@@ -616,7 +808,7 @@ function AiSidebarStandalone({
                     key={starterPrompt}
                     type="button"
                     onClick={() => setPrompt(starterPrompt)}
-                    className="rounded-full border border-surface-border bg-subtle px-3 py-2 text-left text-xs text-ai-text transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="rounded-full border border-surface-border bg-subtle px-3 py-2 text-left text-xs text-ai-text transition-colors hover:border-[#62C073]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62C073]"
                   >
                     {starterPrompt}
                   </button>
@@ -629,7 +821,7 @@ function AiSidebarStandalone({
             className="shrink-0 border-t border-surface-border-subtle bg-surface/50 p-3"
             onSubmit={(event) => event.preventDefault()}
           >
-            <div className="rounded-xl border border-surface-border bg-base/60 p-2 shadow-inner focus-within:border-brand/50">
+            <div className="rounded-xl border border-surface-border bg-base/60 p-2 shadow-inner focus-within:border-[#62C073]/50">
               <Textarea
                 ref={textareaRef}
                 value={prompt}
@@ -648,7 +840,12 @@ function AiSidebarStandalone({
                   size="icon-sm"
                   aria-label="Send message"
                   disabled={!prompt.trim()}
-                  className="h-7 w-7 rounded-lg bg-brand text-base hover:bg-brand/90"
+                  className={cn(
+                    "h-7 w-7 rounded-lg transition-colors",
+                    !prompt.trim()
+                      ? "bg-subtle text-copy-muted opacity-50 cursor-not-allowed"
+                      : "bg-[#62C073] text-[#080809] hover:bg-[#62C073]/90"
+                  )}
                 >
                   <ArrowUp className="h-4 w-4" />
                 </Button>
