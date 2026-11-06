@@ -331,11 +331,11 @@ If the user wants to extend or modify the architecture (e.g. "add a cache to aut
 }`;
 
   const modelsToTry = [
-    process.env.GEMINI_MODEL || "gemini-3.8-flash",
+    process.env.GEMINI_MODEL,
     "gemini-3.5-flash",
-    "gemini-3.7-flash",
-    "gemini-flash-latest",
-  ];
+    "gemini-flash-lite-latest",
+    "gemini-3.8-flash",
+  ].filter(Boolean) as string[];
 
   let lastError: unknown;
   for (const modelName of modelsToTry) {
@@ -346,6 +346,8 @@ If the user wants to extend or modify the architecture (e.g. "add a cache to aut
         system: systemInstructions,
         prompt,
         output: Output.object({ schema: DesignAgentPlanSchema }),
+        abortSignal: AbortSignal.timeout(35000),
+        maxRetries: 1,
       });
 
       if (result.output) {

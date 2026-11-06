@@ -58,6 +58,10 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Recent Repairs
 
+- Resolved Trigger.dev `design-agent` task timeout (`MAX_DURATION_EXCEEDED` of 300 seconds):
+  - Diagnosed empirical API latency where Google Generative AI endpoint hung indefinitely on `gemini-3.8-flash` without returning or failing quickly, while `ai` SDK's retry backoff held the thread for 5 minutes.
+  - Re-ordered `modelsToTry` in `trigger/design-agent.ts` to prioritize fast, responsive models: `gemini-3.5-flash` (~13s) and `gemini-flash-lite-latest` (~3s).
+  - Added an explicit `abortSignal: AbortSignal.timeout(35000)` and `maxRetries: 1` to `generateText` in `generateArchitecturePlan` so any lagging or hanging model call is cleanly aborted after 35 seconds, immediately triggering fallback to the next responsive model rather than consuming the 300-second task ceiling.
 - Resolved `Feed messages fetch timeout` console and rendering error at `CanvasRoomWrapper`:
   - Identified root cause where `CanvasStatusFeed` inside `CanvasPresence` imported `useFeedMessages` from `@liveblocks/react/suspense`, causing Liveblocks' 5-second `FEEDS_TIMEOUT` to reject during page/connection initialization and trigger `CanvasErrorBoundary`, bringing down the entire editor canvas.
   - Switched `CanvasStatusFeed` to use the non-suspense `useFeedMessages` from `@liveblocks/react`, which tracks errors in state rather than suspending or throwing into error boundaries.
