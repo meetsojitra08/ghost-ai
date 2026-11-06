@@ -73,6 +73,12 @@ export async function POST(request: Request) {
           name: access.project.name,
         },
       });
+
+      // Ensure default feeds exist for collaborative chat and status
+      await Promise.allSettled([
+        liveblocks.createFeed({ roomId, feedId: "ai-chat", metadata: { name: "AI Chat" } }),
+        liveblocks.createFeed({ roomId, feedId: "ai-status-feed", metadata: { name: "AI Status Feed" } }),
+      ]);
     } catch (roomError) {
       console.error("Liveblocks getOrCreateRoom error:", roomError);
     }

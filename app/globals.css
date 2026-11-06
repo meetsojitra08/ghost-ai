@@ -22,6 +22,7 @@
   --accent-primary-dim: rgba(0, 200, 212, 0.12);
   --accent-ai: #6457f9;
   --accent-ai-text: #8b82ff;
+  --accent-green: #62C073;
   --state-error: #ff4d4f;
   --state-success: #34d399;
   --state-warning: #fbbf24;
@@ -110,6 +111,7 @@
   --color-accent-dim: var(--accent-primary-dim, rgba(0, 200, 212, 0.12));
   --color-ai: var(--accent-ai, #6457f9);
   --color-ai-text: var(--accent-ai-text, #8b82ff);
+  --color-accent-green: var(--accent-green, #62C073);
   --color-state-error: var(--state-error, #ff4d4f);
   --color-state-success: var(--state-success, #34d399);
   --color-state-warning: var(--state-warning, #fbbf24);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { tasks } from "@trigger.dev/sdk";
+import { auth, tasks } from "@trigger.dev/sdk";
 import { prisma } from "@/lib/prisma";
 import { getClerkIdentity, checkProjectAccess } from "@/lib/project-access";
 import type { designAgentTask } from "@/trigger/design-agent";
@@ -11,7 +11,7 @@ import type { designAgentTask } from "@/trigger/design-agent";
  * Payload:
  * - prompt: string
  * - roomId: string
- * - projectId: string
+ * - projectId?: string
  */
 export async function POST(request: Request) {
   try {
@@ -50,27 +50,30 @@ export async function POST(request: Request) {
       );
     }
 
-    if (typeof projectId !== "string" || !projectId.trim()) {
+    const trimmedPrompt = prompt.trim();
+    const trimmedRoomId = roomId.trim();
+    const effectiveProjectId =
+      typeof projectId === "string" && projectId.trim()
+        ? projectId.trim()
+        : trimmedRoomId;
+
+    if (!effectiveProjectId) {
       return NextResponse.json(
-        { error: "projectId is required" },
+        { error: "projectId or roomId is required" },
         { status: 400 }
       );
     }
 
-    const trimmedPrompt = prompt.trim();
-    const trimmedRoomId = roomId.trim();
-    const trimmedProjectId = projectId.trim();
-
     // Verify user has access to this project
     const access = await checkProjectAccess(
-      trimmedProjectId,
+      effectiveProjectId,
       identity.userId,
       identity.emails
     );
 
     if (!access.hasAccess || !access.project) {
       const exists = await prisma.project.findUnique({
-        where: { id: trimmedProjectId },
+        where: { id: effectiveProjectId },
         select: { id: true },
       });
 
@@ -84,20 +87,36 @@ export async function POST(request: Request) {
     const handle = await tasks.trigger<typeof designAgentTask>("design-agent", {
       prompt: trimmedPrompt,
       roomId: trimmedRoomId,
-      projectId: trimmedProjectId,
+      projectId: effectiveProjectId,
     });
 
     // Create a TaskRun record in Prisma to track ownership
     await prisma.taskRun.create({
       data: {
         runId: handle.id,
-        projectId: trimmedProjectId,
+        projectId: effectiveProjectId,
         userId: identity.userId,
       },
     });
 
+    // Generate a Trigger.dev public token scoped strictly to this run
+    let publicToken: string | undefined;
+    try {
+      publicToken = await auth.createPublicToken({
+        scopes: {
+          read: {
+            runs: [handle.id],
+          },
+        },
+      });
+    } catch (tokenErr) {
+      console.warn("Failed to generate publicToken directly in /api/ai/design:", tokenErr);
+    }
+
     return NextResponse.json({
       runId: handle.id,
+      publicToken,
+      token: publicToken,
       success: true,
     });
   } catch (error) {
